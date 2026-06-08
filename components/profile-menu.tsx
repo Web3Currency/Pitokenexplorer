@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { User, Bell, Info, Globe, ChevronDown, Shield, Smartphone, LogOut, Sparkles } from "lucide-react"
+import { User, Bell, Info, Globe, ChevronDown, Shield, Smartphone, LogOut, Sparkles, LogIn, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/lib/user-context"
+import { PiAuthDialog } from "./pi-auth-dialog"
 import { toast } from "sonner"
 
 interface ProfileMenuProps {
@@ -21,18 +22,54 @@ export function ProfileMenu({ onOpenAbout, defaultPage = "explore", onDefaultPag
   const [accountExpanded, setAccountExpanded] = useState(true)
   const [appExpanded, setAppExpanded] = useState(true)
   const [selectedDefault, setSelectedDefault] = useState<"explore" | "quest">(defaultPage)
+  const [authDialogOpen, setAuthDialogOpen] = useState(false)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
 
-  const { user, isAuthenticated, logout } = useUser()
+  const { user, isAuthenticated, piSDKReady, login, logout } = useUser()
 
   const handleAboutClick = () => {
     setOpen(false)
     onOpenAbout()
   }
 
+  const handleLoginClick = () => {
+    if (!piSDKReady) {
+      toast.error("Pi SDK is still loading", {
+        description: "Please wait a moment and try again.",
+      })
+      return
+    }
+    setAuthDialogOpen(true)
+  }
+
+  const handleAuthConfirm = async () => {
+    setAuthDialogOpen(false)
+    setIsAuthenticating(true)
+
+    try {
+      const success = await login()
+      if (success) {
+        toast.success("Successfully connected to Pi Network!", {
+          description: `Welcome, ${user?.username}!`,
+        })
+      } else {
+        toast.error("Authentication failed", {
+          description: "Please try again or check your Pi Network app.",
+        })
+      }
+    } catch (error) {
+      toast.error("Authentication error", {
+        description: "An unexpected error occurred. Please try again.",
+      })
+    } finally {
+      setIsAuthenticating(false)
+    }
+  }
+
   const handleLogout = () => {
     logout()
     toast.info("Disconnected from Pi Network", {
-      description: "You can reconnect anytime from the sign-in button.",
+      description: "You can reconnect anytime from the sign-in option.",
     })
     setOpen(false)
   }
@@ -58,6 +95,43 @@ export function ProfileMenu({ onOpenAbout, defaultPage = "explore", onDefaultPag
           </SheetHeader>
 
           <div className="mt-2 space-y-3">
+            {/* Sign In Section - Show when not authenticated */}
+            {!isAuthenticated && (
+              <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+                    <LogIn className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Connect Pi Account</p>
+                    <p className="text-xs text-muted-foreground">Authenticate to unlock features</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleLoginClick}
+                  disabled={isAuthenticating || !piSDKReady}
+                  className="w-full gap-2 justify-center"
+                >
+                  {isAuthenticating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : !piSDKReady ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4" />
+                      Sign In with Pi
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
             {/* Pi Account Connection Status */}
             {isAuthenticated && (
               <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
@@ -235,6 +309,12 @@ export function ProfileMenu({ onOpenAbout, defaultPage = "explore", onDefaultPag
           </div>
         </div>
       </SheetContent>
+
+      <PiAuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        onConfirm={handleAuthConfirm}
+      />
     </Sheet>
   </>
   )

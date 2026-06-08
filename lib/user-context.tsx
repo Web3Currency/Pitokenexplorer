@@ -23,32 +23,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Initialize Pi SDK v2 - AWAIT this promise fully
+        // Initialize Pi SDK v2 - AWAIT this promise fully before proceeding
         await piSDK.init()
         setPiSDKReady(true)
-        console.log("[User Context] Pi SDK initialized")
+        console.log("[v0] Pi SDK initialized successfully")
 
         // Load saved user data from localStorage first
         const savedUser = piSDK.getUserData()
         if (savedUser) {
           setUser(savedUser)
-          console.log("[User Context] Restored user from localStorage:", savedUser.username)
+          console.log("[v0] Restored user from localStorage:", savedUser.username)
           setIsLoading(false)
           return
         }
 
         // If no saved user, attempt automatic authentication
-        console.log("[User Context] No saved user found, attempting automatic authentication...")
+        console.log("[v0] No saved user found, attempting automatic authentication...")
         try {
           const userData = await piSDK.authenticate()
           setUser(userData)
-          console.log("[User Context] Auto-authentication successful:", userData.username)
+          console.log("[v0] Auto-authentication successful:", userData.username)
         } catch (authError) {
-          console.log("[User Context] Auto-authentication skipped or cancelled (user action required)")
+          console.log("[v0] Auto-authentication skipped (user action required)")
           // Auto-auth can be cancelled by user - this is normal
         }
       } catch (error) {
-        console.error("[User Context] Pi SDK initialization failed:", error)
+        console.error("[v0] Pi SDK initialization failed:", error)
         setPiSDKReady(false)
       } finally {
         setIsLoading(false)
@@ -61,19 +61,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Manual login function - call on user click
   const login = useCallback(async (): Promise<boolean> => {
     if (!piSDKReady) {
-      console.error("[User Context] Pi SDK not ready")
+      console.error("[v0] Pi SDK not ready")
       return false
     }
 
     setIsLoading(true)
     try {
-      // Authenticate with Pi Network - AWAIT fully
+      // Authenticate with Pi Network - AWAIT fully before proceeding
       const userData = await piSDK.authenticate()
       setUser(userData)
-      console.log("[User Context] Manual login successful:", userData.username)
+      console.log("[v0] Manual login successful:", userData.username)
       return true
     } catch (error) {
-      console.error("[User Context] Manual login failed:", error)
+      console.error("[v0] Manual login failed:", error)
       return false
     } finally {
       setIsLoading(false)
@@ -84,7 +84,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     piSDK.clearUserData()
     setUser(null)
-    console.log("[User Context] User logged out")
+    console.log("[v0] User logged out")
   }, [])
 
   const value: UserContextType = {

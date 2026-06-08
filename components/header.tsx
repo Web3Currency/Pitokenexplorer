@@ -1,7 +1,6 @@
 "use client"
 
 import { ProfileMenu } from "@/components/profile-menu"
-import { PiSignInButton } from "@/components/pi-signin-button"
 
 interface HeaderProps {
   activeTab?: "explore" | "quest"
@@ -19,7 +18,6 @@ export function Header({ activeTab = "explore", defaultPage = "explore", onOpenA
         <h1 className="text-lg font-semibold tracking-wide">{pageTitle}</h1>
 
         <div className="flex items-center gap-3">
-          <PiSignInButton />
           <ProfileMenu 
             onOpenAbout={onOpenAbout || (() => {})} 
             defaultPage={defaultPage}

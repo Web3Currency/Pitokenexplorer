@@ -58,7 +58,7 @@ class PiSDK {
     })
   }
 
-  // Initialize the Pi SDK
+  // Initialize the Pi SDK - MUST be awaited fully
   async init(): Promise<void> {
     if (this.initialized) return
     if (this.initPromise) return this.initPromise
@@ -78,7 +78,8 @@ class PiSDK {
           throw new Error("Pi SDK failed to initialize")
         }
 
-        window.Pi.init({
+        // Await Pi.init() fully as a Promise
+        await window.Pi.init({
           version: "2.0",
           sandbox: PI_NETWORK_CONFIG.SANDBOX,
         })
@@ -92,6 +93,45 @@ class PiSDK {
     })()
 
     return this.initPromise
+  }
+
+  // Validate access token with backend
+  private async validateTokenWithBackend(
+    accessToken: string,
+    user: PiUser
+  ): Promise<PiUserData> {
+    try {
+      const response = await fetch("/api/pi/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          accessToken,
+          uid: user.uid,
+          username: user.username,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Backend validation failed: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log("[v0] Token validated by backend")
+
+      const userData: PiUserData = {
+        uid: user.uid,
+        username: user.username,
+        accessToken,
+        authenticatedAt: Date.now(),
+      }
+
+      return userData
+    } catch (error) {
+      console.error("[v0] Backend token validation failed:", error)
+      throw error
+    }
   }
 
   // Authenticate user with Pi Network - can be called automatically or manually
@@ -108,29 +148,29 @@ class PiSDK {
         return
       }
 
-      console.log("[Pi SDK] Starting authentication (auto or manual)...")
+      console.log("[v0] Starting Pi authentication with username scope...")
 
-      // Pi.authenticate with ONLY username permission
+      // Pi.authenticate with ONLY username scope
       window.Pi.authenticate(
         ["username"],
-        (auth: AuthResult) => {
-          console.log("[Pi SDK] Authentication successful:", auth.user.username)
+        async (auth: AuthResult) => {
+          try {
+            console.log("[v0] Pi authentication successful, validating with backend...")
 
-          // Create user data object
-          const userData: PiUserData = {
-            uid: auth.user.uid,
-            username: auth.user.username,
-            accessToken: auth.accessToken,
-            authenticatedAt: Date.now(),
+            // Validate the access token with the backend
+            const userData = await this.validateTokenWithBackend(auth.accessToken, auth.user)
+
+            // Save to localStorage only after backend validation
+            this.saveUserData(userData)
+
+            resolve(userData)
+          } catch (error) {
+            console.error("[v0] Token validation failed:", error)
+            reject(error)
           }
-
-          // Save to localStorage
-          this.saveUserData(userData)
-
-          resolve(userData)
         },
         (error: Error) => {
-          console.error("[Pi SDK] Authentication failed:", error)
+          console.error("[v0] Pi authentication error:", error)
           reject(error)
         }
       )
@@ -143,9 +183,9 @@ class PiSDK {
 
     try {
       localStorage.setItem("w3c_pi_user", JSON.stringify(userData))
-      console.log("[Pi SDK] User data saved")
+      console.log("[v0] User data saved to localStorage")
     } catch (error) {
-      console.error("[Pi SDK] Failed to save user data:", error)
+      console.error("[v0] Failed to save user data:", error)
     }
   }
 
@@ -162,14 +202,14 @@ class PiSDK {
       // Check if session expired (30 days)
       const daysSinceAuth = (Date.now() - userData.authenticatedAt) / (1000 * 60 * 60 * 24)
       if (daysSinceAuth > 30) {
-        console.log("[Pi SDK] Session expired")
+        console.log("[v0] Session expired")
         this.clearUserData()
         return null
       }
 
       return userData
     } catch (error) {
-      console.error("[Pi SDK] Failed to retrieve user data:", error)
+      console.error("[v0] Failed to retrieve user data:", error)
       return null
     }
   }
@@ -180,9 +220,9 @@ class PiSDK {
 
     try {
       localStorage.removeItem("w3c_pi_user")
-      console.log("[Pi SDK] User data cleared")
+      console.log("[v0] User data cleared")
     } catch (error) {
-      console.error("[Pi SDK] Failed to clear user data:", error)
+      console.error("[v0] Failed to clear user data:", error)
     }
   }
 
