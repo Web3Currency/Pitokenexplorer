@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils"
 import type { Token } from "@/lib/mock-data"
 import { useTokenDetails, useTokenPriceHistory, useDomains } from "@/lib/use-market-data"
 import { MobileTooltip } from "@/components/ui/tooltip"
-import { TokenPriceChart } from "@/components/token-price-chart"
 // REMOVED: checkTokenVerificationStrict import - verification is ONLY from admin metadata
 
 interface TokenDialogProps {
@@ -144,9 +143,6 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
               )}
             </div>
           </div>
-
-          {/* Price chart */}
-          {open && fullIssuer && assetCode && <TokenPriceChart assetCode={assetCode} assetIssuer={fullIssuer} />}
 
           {/* Action buttons */}
           <div className="grid grid-cols-2 gap-2">

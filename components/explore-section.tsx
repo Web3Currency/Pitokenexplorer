@@ -30,7 +30,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { SecondaryHeader } from "./secondary-header"
 import { ExplorerMenu } from "./explorer-menu"
 import { TokenDialog } from "./token-dialog"
-import { PoolVolumeChart } from "./pool-volume-chart"
 import { MobileTooltip } from "@/components/ui/tooltip"
 import type { Token, Domain, MarketStats } from "@/lib/mock-data"
 import { useTokenRegistry, useLiquidityPools, useMarketStats, useTokenPrices, useDomains } from "@/lib/use-market-data"
@@ -867,8 +866,6 @@ export function ExploreSection() {
                               Total {pool.tokenCode} Locked
                             </div>
                           </div>
-
-                          <PoolVolumeChart poolId={pool.id} tokenCode={pool.tokenCode} />
 
                           <div>
                             <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
