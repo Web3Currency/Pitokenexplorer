@@ -57,10 +57,17 @@ export default function AdminExplorerPage() {
     try {
       const response = await fetch("/api/admin/tokens")
       const data = await response.json()
-      setTokens(data)
+      
+      // If no tokens in database, auto-sync from Horizon
+      if (!data || data.length === 0) {
+        console.log("[v0] No tokens found in database, auto-syncing from Horizon...")
+        await handleSyncTokens()
+      } else {
+        setTokens(data)
+        setLoading(false)
+      }
     } catch (error) {
       console.error("[v0] Failed to load tokens:", error)
-    } finally {
       setLoading(false)
     }
   }
@@ -72,6 +79,32 @@ export default function AdminExplorerPage() {
       setPools(data)
     } catch (error) {
       console.error("[v0] Failed to load pools:", error)
+    }
+  }
+
+  const handleSyncTokens = async () => {
+    setSyncing(true)
+    try {
+      const response = await fetch("/api/admin/tokens/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(`Synced ${data.count} tokens to database`)
+        loadTokens()
+      } else {
+        toast.error(data.error || "Failed to sync tokens")
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error("[v0] Failed to sync tokens:", error)
+      toast.error("Failed to sync tokens from Horizon")
+      setLoading(false)
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -190,30 +223,6 @@ export default function AdminExplorerPage() {
       }
     } catch (error) {
       console.error("[v0] Failed to update pool visibility:", error)
-    }
-  }
-
-  const handleSyncTokens = async () => {
-    setSyncing(true)
-    try {
-      const response = await fetch("/api/admin/tokens/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast.success(`Synced ${data.count} tokens to database`)
-        loadTokens()
-      } else {
-        toast.error(data.error || "Failed to sync tokens")
-      }
-    } catch (error) {
-      console.error("[v0] Failed to sync tokens:", error)
-      toast.error("Failed to sync tokens from Horizon")
-    } finally {
-      setSyncing(false)
     }
   }
 
