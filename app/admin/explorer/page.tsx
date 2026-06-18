@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Eye, EyeOff, Search, CheckCircle, Edit, XCircle, ChevronDown } from "lucide-react"
+import { Eye, EyeOff, Search, CheckCircle, Edit, XCircle, ChevronDown, Download, Loader2 } from "lucide-react"
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog"
+import { toast } from "sonner"
 import type { TokenVisibility } from "@/lib/admin/tokenStore"
 import type { PoolVisibility } from "@/lib/admin/poolStore"
 
@@ -22,6 +23,7 @@ export default function AdminExplorerPage() {
   const [tokens, setTokens] = useState<TokenVisibility[]>([])
   const [pools, setPools] = useState<PoolVisibility[]>([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [visibilityFilter, setVisibilityFilter] = useState<string>("all")
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -191,6 +193,30 @@ export default function AdminExplorerPage() {
     }
   }
 
+  const handleSyncTokens = async () => {
+    setSyncing(true)
+    try {
+      const response = await fetch("/api/admin/tokens/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(`Synced ${data.count} tokens to database`)
+        loadTokens()
+      } else {
+        toast.error(data.error || "Failed to sync tokens")
+      }
+    } catch (error) {
+      console.error("[v0] Failed to sync tokens:", error)
+      toast.error("Failed to sync tokens from Horizon")
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   const filteredTokens = tokens.filter((token) => {
     const matchesSearch =
       token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -275,6 +301,32 @@ export default function AdminExplorerPage() {
                 <CardDescription>Manage token visibility, verification, and metadata</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {tokens.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-yellow-600 bg-yellow-50 p-4">
+                    <p className="text-sm text-yellow-900 font-medium">No tokens in database yet</p>
+                    <p className="text-xs text-yellow-700 mt-1">Click "Fetch & Sync Tokens" to import tokens from Horizon API</p>
+                  </div>
+                )}
+                
+                <Button 
+                  onClick={handleSyncTokens}
+                  disabled={syncing}
+                  variant="default"
+                  className="gap-2"
+                >
+                  {syncing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Syncing Tokens...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Fetch & Sync Tokens from Horizon
+                    </>
+                  )}
+                </Button>
+
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

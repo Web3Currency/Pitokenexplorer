@@ -1,58 +1,61 @@
 import { NextResponse } from "next/server"
-import { getTokenRegistry, getCacheTimestamp, CACHE_KEYS } from "@/lib/horizon-fetcher"
-import { getHiddenTokenIds, getTokenMetadata } from "@/lib/admin/tokenStore"
+import { supabaseServer } from "@/lib/supabase-client"
 
 export const dynamic = "force-dynamic"
 
+/**
+ * Explorer Token Registry - ONLY fetches from Supabase admin_tokens
+ * 
+ * Data flow:
+ * 1. Admin clicks "Fetch & Sync Tokens" in /admin/explorer
+ * 2. Admin API endpoint (/api/admin/tokens/sync) fetches from Horizon
+ * 3. Tokens saved to admin_tokens table in Supabase
+ * 4. Explorer fetches ONLY from admin_tokens (is_hidden = false)
+ * 5. Users see only what admin has approved
+ * 
+ * This ensures admin has complete control over what appears in Explorer
+ */
 export async function GET() {
   try {
-    const allTokens = await getTokenRegistry()
-    const hiddenIds = await getHiddenTokenIds()
-    const cacheTimestamp = getCacheTimestamp(CACHE_KEYS.TOKEN_REGISTRY)
+    // Fetch only visible tokens from Supabase admin_tokens table
+    const { data: tokens, error } = await supabaseServer
+      .from('admin_tokens')
+      .select('*')
+      .eq('is_hidden', false)
+      .order('symbol', { ascending: true })
 
-    // Filter out hidden tokens and enforce ADMIN-ONLY metadata
-    const visibleTokens = await Promise.all(
-      allTokens
-        .filter(token => !hiddenIds.includes(token.id))
-        .map(async (token) => {
-          const metadata = await getTokenMetadata(token.id)
-          
-          // ENFORCE: Admin Dashboard is the ONLY source of truth
-          // Remove ALL fallbacks, auto-verify logic, and inferred values
-          return {
-            ...token,
-            // Verification: ONLY from admin, no auto-verify
-            verified: metadata.verified,
-            // Logo: ONLY from admin, no fallbacks or generated icons
-            logoUrl: metadata.logoUrl || null,
-            // Category: ONLY from admin, no horizon-fetcher registry
-            category: metadata.category || null,
-            // Description: ONLY from admin
-            description: metadata.description || null,
-            // URLs: ONLY from admin
-            tradeUrl: metadata.tradeUrl || null,
-            appUrl: metadata.appUrl || null,
-            // Token Metrics: ONLY from admin
-            circulatingSupply: metadata.circulatingSupply || null,
-            totalSupply: metadata.totalSupply || null,
-            marketCap: metadata.marketCap || null,
-            // Social Media: ONLY from admin
-            website: metadata.website || null,
-            twitter: metadata.twitter || null,
-            telegram: metadata.telegram || null
-          }
-        })
-    )
+    if (error) {
+      console.error('[v0] Supabase fetch error:', error)
+      return NextResponse.json({ error: 'Failed to fetch tokens' }, { status: 500 })
+    }
 
-    return new NextResponse(JSON.stringify(visibleTokens), {
+    // Transform database columns to match expected frontend format
+    const transformedTokens = (tokens || []).map((token: any) => ({
+      id: token.id,
+      symbol: token.symbol,
+      issuer: token.issuer,
+      icon: token.icon,
+      category: token.category,
+      description: token.description,
+      tradeUrl: token.trade_url,
+      appUrl: token.app_url,
+      circulatingSupply: token.circulating_supply,
+      totalSupply: token.total_supply,
+      marketCap: token.market_cap,
+      website: token.website,
+      twitter: token.twitter,
+      telegram: token.telegram,
+      verified: token.verified,
+    }))
+
+    return new NextResponse(JSON.stringify(transformedTokens), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=600, stale-while-revalidate=300", // 10min cache, 5min stale
-        "X-Cache-Timestamp": cacheTimestamp ? new Date(cacheTimestamp).toISOString() : "fresh",
+        "Cache-Control": "public, max-age=300", // 5min cache
       },
     })
   } catch (error) {
-    console.error("Error fetching token registry:", error)
-    return NextResponse.json({ error: "Failed to fetch tokens" }, { status: 500 })
+    console.error('[v0] Error fetching token registry:', error)
+    return NextResponse.json({ error: 'Failed to fetch tokens' }, { status: 500 })
   }
 }
