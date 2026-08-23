@@ -13,10 +13,28 @@ const REFRESH_INTERVALS = {
   TOKEN_PRICE_HISTORY: 0,
 } as const
 
+const REQUEST_TIMEOUT_MS = 12_000
+
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Failed to fetch ${url}`)
-  return res.json()
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+
+    if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`)
+    return res.json()
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${url}`)
+    }
+    throw error
+  } finally {
+    window.clearTimeout(timeout)
+  }
 }
 
 const baseSwrConfig = {
