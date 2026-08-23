@@ -1578,22 +1578,9 @@ async function getTokenFirstSeenTime(poolId: string): Promise<number | null> {
  * No heuristics, no auto-verification, no external domain checks
  * Count only tokens where admin has explicitly set verified=true
  */
-async function calculateVerifiedTokensCount(pools: PoolData[]): Promise<number> {
-  try {
-    // Import admin store dynamically (server-side only)
-    const { getTokensWithVisibility } = await import("@/lib/admin/tokenStore")
-    
-    // Get all tokens with their admin metadata
-    const tokensWithMetadata = await getTokensWithVisibility()
-    
-    // Count only tokens where admin explicitly set verified=true
-    const verifiedCount = tokensWithMetadata.filter(token => token.verified === true).length
-    
-    return verifiedCount
-  } catch (error) {
-    console.error("Error calculating verified tokens count:", error)
-    return 0
-  }
+async function calculateVerifiedTokensCount(_pools: PoolData[]): Promise<number> {
+  // Verification is no longer persisted; live Horizon data remains the source.
+  return 0
 }
 
 /**
