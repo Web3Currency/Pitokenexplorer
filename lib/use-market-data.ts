@@ -1,12 +1,3 @@
-/**
- * Client market-data hooks.
- *
- * The Explorer is read-only, so the client only fetches data needed to render
- * the current view. Expensive token, pool-volume, and history requests remain
- * on-demand. Market stats are intentionally progressive: fast stats first,
- * slower change calculations second.
- */
-
 import useSWR from "swr"
 import type { Token, LiquidityPool, MarketStats } from "@/lib/mock-data"
 
@@ -43,8 +34,9 @@ export function useTokenRegistry() {
   })
 }
 
-export function useLiquidityPools() {
-  return useSWR<LiquidityPool[]>("/api/explorer/pools", fetcher, {
+/** Fetch only when the liquidity-pools view is active. */
+export function useLiquidityPools(enabled = true) {
+  return useSWR<LiquidityPool[]>(enabled ? "/api/explorer/pools" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: REFRESH_INTERVALS.POOLS,
   })
@@ -72,8 +64,8 @@ interface CombinedMarketStats extends MarketStatsInstant {
   liquidityChange?: string | null
   volume24hChange?: string | null
   tokenCountChange?: string | null
-  newTokens7d?: number | null
-  verifiedTokensCount?: number | null
+  newTokens7d?: number
+  verifiedTokensCount?: number
 }
 
 export function useMarketStatsInstant() {
@@ -83,28 +75,17 @@ export function useMarketStatsInstant() {
   })
 }
 
-/**
- * Deferred stats are disabled until instant stats have arrived. This avoids
- * sending two market-stat requests at the same time during the first render.
- */
+/** Starts only after instant market stats exist, keeping slow calculations off the initial request burst. */
 export function useMarketStatsDeferred(enabled = true) {
-  return useSWR<MarketStatsDeferred>(
-    enabled ? "/api/explorer/market-stats/deferred" : null,
-    fetcher,
-    {
-      ...baseSwrConfig,
-      refreshInterval: REFRESH_INTERVALS.MARKET_STATS_DEFERRED,
-      revalidateOnMount: true,
-    },
-  )
+  return useSWR<MarketStatsDeferred>(enabled ? "/api/explorer/market-stats/deferred" : null, fetcher, {
+    ...baseSwrConfig,
+    refreshInterval: REFRESH_INTERVALS.MARKET_STATS_DEFERRED,
+    revalidateOnMount: true,
+  })
 }
 
 export function useMarketStats() {
-  const {
-    data: instant,
-    isLoading: instantLoading,
-    error: instantError,
-  } = useMarketStatsInstant()
+  const { data: instant, isLoading: instantLoading, error: instantError } = useMarketStatsInstant()
   const { data: deferred, isLoading: deferredLoading } = useMarketStatsDeferred(Boolean(instant))
 
   const combinedData: CombinedMarketStats | undefined = instant
@@ -154,7 +135,6 @@ interface TokenDetailsResponse {
 
 export function useTokenDetails(assetCode: string | null, issuer: string | null) {
   const shouldFetch = Boolean(assetCode && issuer)
-
   return useSWR<TokenDetailsResponse>(
     shouldFetch ? `/api/explorer/tokens/${assetCode}/details?issuer=${issuer}` : null,
     fetcher,
@@ -185,10 +165,11 @@ export function usePoolVolume(poolId: string | null) {
   })
 }
 
-export function useDomains() {
+export function useDomains(enabled = false) {
   return useSWR("/api/explorer/domains", fetcher, {
     ...baseSwrConfig,
     refreshInterval: 60 * 60 * 1000,
+    isPaused: () => !enabled,
   })
 }
 
@@ -205,7 +186,6 @@ export interface TokenPriceHistoryResponse {
 
 export function useTokenPriceHistory(assetCode: string | null, issuer: string | null) {
   const shouldFetch = Boolean(assetCode && issuer)
-
   return useSWR<TokenPriceHistoryResponse>(
     shouldFetch ? `/api/tokens/${assetCode}/price-history?issuer=${issuer}` : null,
     fetcher,
