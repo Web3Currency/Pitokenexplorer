@@ -27,8 +27,6 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { SecondaryHeader } from "./secondary-header"
-import { ExplorerMenu } from "./explorer-menu"
 import { TokenDialog } from "./token-dialog"
 import { MobileTooltip } from "@/components/ui/tooltip"
 import type { Token, Domain, MarketStats } from "@/lib/mock-data"
@@ -261,7 +259,6 @@ export function ExploreSection() {
   const [activeTab, setActiveTab] = useState("market")
   const [selectedToken, setSelectedToken] = useState<Token | null>(null)
   const [expandedPoolToken, setExpandedPoolToken] = useState<string | null>(null)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [liquiditySortAsc, setLiquiditySortAsc] = useState(false)
 
@@ -498,10 +495,7 @@ export function ExploreSection() {
 
   return (
     <div className="flex flex-col h-full">
-      <SecondaryHeader onMenuClick={() => setIsMenuOpen(true)} />
-      <ExplorerMenu open={isMenuOpen} onOpenChange={setIsMenuOpen} />
-
-      <div className="flex-1 overflow-y-auto explore-scroll-container pt-10">
+  <div className="flex-1 overflow-y-auto explore-scroll-container">
         <div className="p-4 space-y-4">
           <UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} />
 
