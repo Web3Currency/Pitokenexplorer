@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    // TypeScript is checked explicitly by `npm run typecheck` and CI.
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,
