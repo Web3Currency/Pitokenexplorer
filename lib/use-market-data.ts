@@ -130,8 +130,10 @@ interface TokenPriceData {
   totalLiquidity?: string | null
 }
 
-export function useTokenPrices() {
-  return useSWR<Record<string, TokenPriceData>>("/api/explorer/tokens/prices", fetcher, {
+/** Secondary dataset: load prices shortly after the token registry is available. */
+export function useTokenPrices(enabled = true) {
+  const ready = useDelayedEnable(350, enabled)
+  return useSWR<Record<string, TokenPriceData>>(ready ? "/api/explorer/tokens/prices" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: REFRESH_INTERVALS.PRICES,
   })
