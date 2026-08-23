@@ -14,26 +14,23 @@ interface CacheEntry<T> {
   expiresAt: number
 }
 
-// Cache TTLs in milliseconds (using upper bounds of specified ranges)
 export const CACHE_TTL = {
-  TOKEN_LIST: 10 * 60 * 1000, // 10 minutes
-  LIQUIDITY_POOLS: 15 * 60 * 1000, // 15 minutes
-  MARKET_STATS: 5 * 60 * 1000, // 5 minutes
-  PRICES: 2 * 60 * 1000, // 2 minutes
-  TRUSTLINES_HOLDERS: 60 * 60 * 1000, // 60 minutes
-  DOMAINS: 60 * 60 * 1000, // 60 minutes (static data)
-  POOL_VOLUME: 10 * 60 * 1000, // 10 minutes
-  TOKEN_PRICE_HISTORY: 10 * 60 * 1000, // 10 minutes
+  TOKEN_LIST: 10 * 60 * 1000,
+  LIQUIDITY_POOLS: 15 * 60 * 1000,
+  MARKET_STATS: 5 * 60 * 1000,
+  PRICES: 2 * 60 * 1000,
+  TRUSTLINES_HOLDERS: 60 * 60 * 1000,
+  DOMAINS: 60 * 60 * 1000,
+  POOL_VOLUME: 10 * 60 * 1000,
+  TOKEN_PRICE_HISTORY: 10 * 60 * 1000,
 } as const
 
 // Keep the process-local cache bounded. Detail/history endpoints can create
 // many unique keys over time, so an unbounded Map would slowly consume memory.
 const MAX_CACHE_ENTRIES = 250
 
-// In-memory cache store
 const cache = new Map<string, CacheEntry<any>>()
 
-// Cache keys for different data types
 export const CACHE_KEYS = {
   TOKEN_REGISTRY: "token-registry",
   LIQUIDITY_POOLS: "liquidity-pools",
@@ -46,8 +43,8 @@ export const CACHE_KEYS = {
 } as const
 
 /**
- * Remove expired entries and, if necessary, evict the oldest entries so the
- * process-local cache remains bounded in long-running server processes.
+ * Remove expired entries and evict the least-recently-used entries when the
+ * process-local cache reaches its maximum size.
  */
 function pruneCache(): void {
   const now = Date.now()
@@ -66,7 +63,8 @@ function pruneCache(): void {
 }
 
 /**
- * Get cached data if valid, otherwise return null
+ * Get cached data if valid. A cache hit refreshes recency so frequently used
+ * entries survive bounded-cache eviction longer than cold entries.
  */
 export function getCache<T>(key: string): T | null {
   const entry = cache.get(key)
@@ -78,14 +76,21 @@ export function getCache<T>(key: string): T | null {
     return null
   }
 
+  // Refresh insertion order to implement LRU behavior.
+  cache.delete(key)
+  cache.set(key, entry)
+
   return entry.data as T
 }
 
 /**
- * Set cache with specified TTL
+ * Set cache with specified TTL.
  */
 export function setCache<T>(key: string, data: T, ttl: number): void {
+  // Updating an existing key should also make it the most recently used entry.
+  cache.delete(key)
   pruneCache()
+
   const now = Date.now()
   cache.set(key, {
     data,
@@ -94,40 +99,31 @@ export function setCache<T>(key: string, data: T, ttl: number): void {
   })
 }
 
-/**
- * Check if cache entry exists and is still valid
- */
 export function isCacheValid(key: string): boolean {
   const entry = cache.get(key)
   if (!entry) return false
-  return Date.now() < entry.expiresAt
+
+  if (Date.now() >= entry.expiresAt) {
+    cache.delete(key)
+    return false
+  }
+
+  return true
 }
 
-/**
- * Get cache timestamp (for debugging/headers)
- */
 export function getCacheTimestamp(key: string): number | null {
   const entry = cache.get(key)
   return entry?.timestamp ?? null
 }
 
-/**
- * Clear specific cache key
- */
 export function clearCache(key: string): void {
   cache.delete(key)
 }
 
-/**
- * Clear all cache entries
- */
 export function clearAllCache(): void {
   cache.clear()
 }
 
-/**
- * Get cache stats for debugging
- */
 export function getCacheStats(): { keys: string[]; size: number } {
   return {
     keys: Array.from(cache.keys()),
