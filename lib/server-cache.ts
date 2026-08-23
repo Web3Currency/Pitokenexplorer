@@ -26,6 +26,10 @@ export const CACHE_TTL = {
   TOKEN_PRICE_HISTORY: 10 * 60 * 1000, // 10 minutes
 } as const
 
+// Keep the process-local cache bounded. Detail/history endpoints can create
+// many unique keys over time, so an unbounded Map would slowly consume memory.
+const MAX_CACHE_ENTRIES = 250
+
 // In-memory cache store
 const cache = new Map<string, CacheEntry<any>>()
 
@@ -40,6 +44,26 @@ export const CACHE_KEYS = {
   POOL_VOLUME: (poolId: string) => `pool-volume-${poolId}`,
   TOKEN_PRICE_HISTORY: (assetCode: string, issuer: string) => `token-price-history-${assetCode}-${issuer}`,
 } as const
+
+/**
+ * Remove expired entries and, if necessary, evict the oldest entries so the
+ * process-local cache remains bounded in long-running server processes.
+ */
+function pruneCache(): void {
+  const now = Date.now()
+
+  for (const [key, entry] of cache) {
+    if (now >= entry.expiresAt) {
+      cache.delete(key)
+    }
+  }
+
+  while (cache.size >= MAX_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value
+    if (!oldestKey) break
+    cache.delete(oldestKey)
+  }
+}
 
 /**
  * Get cached data if valid, otherwise return null
@@ -61,6 +85,7 @@ export function getCache<T>(key: string): T | null {
  * Set cache with specified TTL
  */
 export function setCache<T>(key: string, data: T, ttl: number): void {
+  pruneCache()
   const now = Date.now()
   cache.set(key, {
     data,
