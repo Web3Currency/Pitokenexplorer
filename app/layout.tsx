@@ -15,9 +15,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Made with App Studio",
-  description: "Pi Network app",
-  generator: "v0.app",
+  title: "PiToken Explorer",
+  description: "Explore Pi Network tokens, markets, liquidity, and ecosystem data.",
 }
 
 export default function RootLayout({
