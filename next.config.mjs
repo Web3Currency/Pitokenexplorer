@@ -7,6 +7,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  poweredByHeader: false,
   devIndicators: {
     buildActivity: false,
   },
