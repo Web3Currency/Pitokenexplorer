@@ -1,5 +1,3 @@
-"use client"
-
 import { ExploreSection } from "@/components/explore-section"
 import { Header } from "@/components/header"
 
