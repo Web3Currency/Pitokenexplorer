@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import useSWR from "swr"
 import type { Token, LiquidityPool, MarketStats } from "@/lib/mock-data"
 
@@ -27,6 +28,22 @@ const baseSwrConfig = {
   errorRetryInterval: 5000,
 }
 
+function useDelayedEnable(delayMs: number, enabled = true) {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!enabled) {
+      setReady(false)
+      return
+    }
+
+    const timer = window.setTimeout(() => setReady(true), delayMs)
+    return () => window.clearTimeout(timer)
+  }, [delayMs, enabled])
+
+  return ready
+}
+
 export function useTokenRegistry() {
   return useSWR<Token[]>("/api/explorer/tokens/registry", fetcher, {
     ...baseSwrConfig,
@@ -34,8 +51,10 @@ export function useTokenRegistry() {
   })
 }
 
+/** Secondary dataset: wait briefly so the primary market view can render first. */
 export function useLiquidityPools(enabled = true) {
-  return useSWR<LiquidityPool[]>(enabled ? "/api/explorer/pools" : null, fetcher, {
+  const ready = useDelayedEnable(1200, enabled)
+  return useSWR<LiquidityPool[]>(ready ? "/api/explorer/pools" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: REFRESH_INTERVALS.POOLS,
   })
@@ -163,8 +182,10 @@ export function usePoolVolume(poolId: string | null) {
   })
 }
 
-export function useDomains(enabled = false) {
-  return useSWR(enabled ? "/api/explorer/domains" : null, fetcher, {
+/** Secondary dataset: wait longer because domains are not needed for initial market discovery. */
+export function useDomains(enabled = true) {
+  const ready = useDelayedEnable(2200, enabled)
+  return useSWR(ready ? "/api/explorer/domains" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: 60 * 60 * 1000,
   })
