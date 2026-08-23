@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { User, Bell, Info, Globe, ChevronDown, Shield, Smartphone, LogOut, Sparkles, LogIn, Loader2 } from "lucide-react"
+import { User, Bell, Globe, ChevronDown, Shield, LogOut, Sparkles, LogIn, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
@@ -11,26 +11,14 @@ import { useUser } from "@/lib/user-context"
 import { PiAuthDialog } from "./pi-auth-dialog"
 import { toast } from "sonner"
 
-interface ProfileMenuProps {
-  onOpenAbout: () => void
-  defaultPage?: "explore" | "quest"
-  onDefaultPageChange?: (page: "explore" | "quest") => void
-}
-
-export function ProfileMenu({ onOpenAbout, defaultPage = "explore", onDefaultPageChange }: ProfileMenuProps) {
+export function ProfileMenu() {
   const [open, setOpen] = useState(false)
   const [accountExpanded, setAccountExpanded] = useState(true)
   const [appExpanded, setAppExpanded] = useState(true)
-  const [selectedDefault, setSelectedDefault] = useState<"explore" | "quest">(defaultPage)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
 
   const { user, isAuthenticated, piSDKReady, login, logout } = useUser()
-
-  const handleAboutClick = () => {
-    setOpen(false)
-    onOpenAbout()
-  }
 
   const handleLoginClick = () => {
     if (!piSDKReady) {
@@ -244,60 +232,6 @@ export function ProfileMenu({ onOpenAbout, defaultPage = "explore", onDefaultPag
                       <span className="text-xs text-muted-foreground">English</span>
                     </button>
 
-                    {/* Default Page */}
-                    <div className="flex w-full items-center gap-3 rounded-lg px-3 py-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                        <Smartphone className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-medium">Default Page</p>
-                        <p className="text-xs text-muted-foreground">On app launch</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedDefault("explore")
-                            onDefaultPageChange?.("explore")
-                          }}
-                          className={cn(
-                            "px-3 py-1 rounded text-xs font-medium transition-colors",
-                            selectedDefault === "explore"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80",
-                          )}
-                        >
-                          Explore
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedDefault("quest")
-                            onDefaultPageChange?.("quest")
-                          }}
-                          className={cn(
-                            "px-3 py-1 rounded text-xs font-medium transition-colors",
-                            selectedDefault === "quest"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80",
-                          )}
-                        >
-                          Quest
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* About */}
-                    <button
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-3 hover:bg-muted/60 active:bg-muted transition-colors"
-                      onClick={handleAboutClick}
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                        <Info className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-medium">Litepaper</p>
-                        <p className="text-xs text-muted-foreground">App information</p>
-                      </div>
-                    </button>
                   </div>
                 </CollapsibleContent>
               </div>
