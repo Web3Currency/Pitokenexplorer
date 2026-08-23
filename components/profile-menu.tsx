@@ -18,15 +18,9 @@ export function ProfileMenu() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
 
-  const { user, isAuthenticated, piSDKReady, login, logout } = useUser()
+  const { user, isAuthenticated, login, logout } = useUser()
 
   const handleLoginClick = () => {
-    if (!piSDKReady) {
-      toast.error("Pi SDK is still loading", {
-        description: "Please wait a moment and try again.",
-      })
-      return
-    }
     setAuthDialogOpen(true)
   }
 
@@ -38,14 +32,14 @@ export function ProfileMenu() {
       const success = await login()
       if (success) {
         toast.success("Successfully connected to Pi Network!", {
-          description: `Welcome, ${user?.username}!`,
+          description: `Welcome, ${user?.username ?? "Pi user"}!`,
         })
       } else {
         toast.error("Authentication failed", {
           description: "Please try again or check your Pi Network app.",
         })
       }
-    } catch (error) {
+    } catch {
       toast.error("Authentication error", {
         description: "An unexpected error occurred. Please try again.",
       })
@@ -83,7 +77,6 @@ export function ProfileMenu() {
           </SheetHeader>
 
           <div className="mt-2 space-y-3">
-            {/* Sign In Section - Show when not authenticated */}
             {!isAuthenticated && (
               <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
                 <div className="flex items-center gap-3 mb-3">
@@ -97,18 +90,13 @@ export function ProfileMenu() {
                 </div>
                 <Button
                   onClick={handleLoginClick}
-                  disabled={isAuthenticating || !piSDKReady}
+                  disabled={isAuthenticating}
                   className="w-full gap-2 justify-center"
                 >
                   {isAuthenticating ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Connecting...
-                    </>
-                  ) : !piSDKReady ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading...
                     </>
                   ) : (
                     <>
@@ -120,7 +108,6 @@ export function ProfileMenu() {
               </div>
             )}
 
-            {/* Pi Account Connection Status */}
             {isAuthenticated && (
               <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
                 <div className="flex items-start gap-3">
@@ -144,7 +131,6 @@ export function ProfileMenu() {
               </div>
             )}
 
-            {/* Account Section */}
             <Collapsible open={accountExpanded} onOpenChange={setAccountExpanded}>
               <div className="rounded-xl bg-card/50 border border-border/40 overflow-hidden">
                 <CollapsibleTrigger className="w-full">
@@ -161,10 +147,10 @@ export function ProfileMenu() {
 
                 <CollapsibleContent>
                   <div className="px-2 pb-2 space-y-1">
-                    {/* Notifications */}
                     <button
+                      type="button"
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-3 hover:bg-muted/60 active:bg-muted transition-colors"
-                      onClick={() => {}}
+                      onClick={() => toast.info("Notifications are not available yet.")}
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                         <Bell className="h-4 w-4 text-primary" />
@@ -173,15 +159,13 @@ export function ProfileMenu() {
                         <p className="text-sm font-medium">Notifications</p>
                         <p className="text-xs text-muted-foreground">System messages</p>
                       </div>
-                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">
-                        0
-                      </Badge>
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">0</Badge>
                     </button>
 
-                    {/* Security */}
                     <button
+                      type="button"
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-3 hover:bg-muted/60 active:bg-muted transition-colors"
-                      onClick={() => {}}
+                      onClick={() => toast.info("Security settings are managed by Pi Network.")}
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                         <Shield className="h-4 w-4 text-primary" />
@@ -200,7 +184,6 @@ export function ProfileMenu() {
               </div>
             </Collapsible>
 
-            {/* App Section */}
             <Collapsible open={appExpanded} onOpenChange={setAppExpanded}>
               <div className="rounded-xl bg-card/50 border border-border/40 overflow-hidden">
                 <CollapsibleTrigger className="w-full">
@@ -217,10 +200,10 @@ export function ProfileMenu() {
 
                 <CollapsibleContent>
                   <div className="px-2 pb-2 space-y-1">
-                    {/* Language */}
                     <button
+                      type="button"
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-3 hover:bg-muted/60 active:bg-muted transition-colors"
-                      onClick={() => {}}
+                      onClick={() => toast.info("English is currently the only supported language.")}
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                         <Globe className="h-4 w-4 text-primary" />
@@ -231,18 +214,13 @@ export function ProfileMenu() {
                       </div>
                       <span className="text-xs text-muted-foreground">English</span>
                     </button>
-
                   </div>
                 </CollapsibleContent>
               </div>
             </Collapsible>
-
-          {/* System Appearance Note */}
-          <div className="mt-2">
-            
           </div>
-        </div>
-      </SheetContent>
+        </SheetContent>
+      </Sheet>
 
       <PiAuthDialog
         open={authDialogOpen}
