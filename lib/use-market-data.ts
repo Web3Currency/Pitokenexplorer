@@ -34,7 +34,6 @@ export function useTokenRegistry() {
   })
 }
 
-/** Fetch only when the liquidity-pools view is active. */
 export function useLiquidityPools(enabled = true) {
   return useSWR<LiquidityPool[]>(enabled ? "/api/explorer/pools" : null, fetcher, {
     ...baseSwrConfig,
@@ -75,7 +74,6 @@ export function useMarketStatsInstant() {
   })
 }
 
-/** Starts only after instant market stats exist, keeping slow calculations off the initial request burst. */
 export function useMarketStatsDeferred(enabled = true) {
   return useSWR<MarketStatsDeferred>(enabled ? "/api/explorer/market-stats/deferred" : null, fetcher, {
     ...baseSwrConfig,
@@ -166,10 +164,9 @@ export function usePoolVolume(poolId: string | null) {
 }
 
 export function useDomains(enabled = false) {
-  return useSWR("/api/explorer/domains", fetcher, {
+  return useSWR(enabled ? "/api/explorer/domains" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: 60 * 60 * 1000,
-    isPaused: () => !enabled,
   })
 }
 
