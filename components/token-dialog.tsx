@@ -113,8 +113,8 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
             {[
               { label: "24h volume", value: token.volume || "—" },
               { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
-              { label: "Holders", value: String(displayToken?.holders ?? 0) },
               { label: "Trustlines", value: String(displayToken?.trustlines ?? 0) },
+              { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },
               { label: "All-time high", value: athPrice ? `${athPrice} π` : "—" },
               { label: "All-time low", value: atlPrice ? `${atlPrice} π` : "—" },
             ].map((stat) => (
@@ -123,6 +123,10 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
                 <div className="mt-1 text-sm font-semibold truncate">{stat.value}</div>
               </div>
             ))}
+          </div>
+          <div className="rounded-xl bg-muted p-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Issuer flags</div>
+            <div className="mt-1 text-sm font-semibold">{(displayToken as any)?.issuerFlags || "—"}</div>
           </div>
         </div>
       </DialogContent>

@@ -95,7 +95,9 @@ export interface TokenDetailsData {
   totalLiquidity: string | null // Added total liquidity across all pools
   trustlines: number
   holders: number
-  circulatingSupply: null
+  circulatingSupply: string | null
+  poolBalance: string | null
+  issuerFlags: string | null
   poolId: string | null
   athPrice: string | null // Added ATH price
   atlPrice: string | null // Added ATL price
@@ -683,25 +685,18 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
     totalLiquidity += p.piAmount
   })
 
-  // Fetch trustlines and holders data
-  const holdersCacheKey = `holders-${assetCode}-${assetIssuer}`
-  let holdersData = getCache<{ trustlines: number; holderCount: number }>(holdersCacheKey)
-
-  if (!holdersData) {
-    holdersData = await fetchAssetStatsWithHolders(assetCode, assetIssuer)
-    setCache(holdersCacheKey, holdersData, CACHE_TTL.TRUSTLINES_HOLDERS)
-  }
-
-  const { trustlines, holderCount } = holdersData
+  const assetRecord = await fetchOfficialAssetRecord(assetCode, assetIssuer)
 
   const result: TokenDetailsData = {
     id: `${assetCode}:${assetIssuer}`,
     price: price ? price.toFixed(4) : null,
     liquidity: mainPoolLiquidity > 0 ? mainPoolLiquidity.toLocaleString() : null,
     totalLiquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() : null,
-    trustlines,
-    holders: holderCount,
-    circulatingSupply: null,
+    trustlines: assetRecord.trustlines,
+    holders: 0,
+    circulatingSupply: assetRecord.circulatingSupply,
+    poolBalance: assetRecord.poolBalance,
+    issuerFlags: assetRecord.issuerFlags,
     poolId: mainPool?.pool.id || null,
     athPrice: null,
     atlPrice: null,
@@ -717,6 +712,46 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
  * - Trustlines: All unique accounts that have ever added this token (including 0 balance)
  * - Holders: Accounts with balance > 0
  */
+
+async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string): Promise<{
+  trustlines: number
+  circulatingSupply: string | null
+  poolBalance: string | null
+  issuerFlags: string | null
+}> {
+  const empty = { trustlines: 0, circulatingSupply: null, poolBalance: null, issuerFlags: null }
+  try {
+    const url = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
+    const response: any = await fetch(url, { next: { revalidate: 300 } })
+    if (!response.ok) return empty
+    const data: any = await response.json()
+    const asset = data._embedded?.records?.[0]
+    if (!asset) return empty
+
+    const formatAmount = (value: string | number | undefined) => {
+      const amount = Number.parseFloat(String(value ?? ""))
+      return Number.isFinite(amount) ? amount.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null
+    }
+    const flags = asset.flags || {}
+    const flagLabels = [
+      flags.auth_required ? "Auth required" : null,
+      flags.auth_revocable ? "Revocable" : null,
+      flags.auth_immutable ? "Immutable" : null,
+      flags.auth_clawback_enabled ? "Clawback" : null,
+    ].filter(Boolean)
+
+    return {
+      trustlines: Number(asset.num_accounts) || 0,
+      circulatingSupply: formatAmount(asset.amount),
+      poolBalance: formatAmount(asset.liquidity_pools_amount),
+      issuerFlags: flagLabels.length > 0 ? flagLabels.join(" · ") : "None",
+    }
+  } catch (error) {
+    console.error("Error fetching official asset record:", error)
+    return empty
+  }
+}
+
 async function fetchAssetStatsWithHolders(
   assetCode: string,
   assetIssuer: string,

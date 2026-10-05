@@ -161,7 +161,9 @@ interface TokenDetailsResponse {
   totalLiquidity?: string | null
   trustlines: number
   holders: number
-  circulatingSupply: null
+  circulatingSupply: string | null
+  poolBalance?: string | null
+  issuerFlags?: string | null
   poolId: string | null
   athPrice?: string | null
   atlPrice?: string | null
