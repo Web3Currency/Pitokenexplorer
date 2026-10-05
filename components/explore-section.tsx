@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import {
   Search,
@@ -265,8 +265,9 @@ function ListSkeleton({ rows = 6 }: { rows?: number }) {
 
 export function ExploreSection() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("market")
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "market")
   const [selectedToken, setSelectedToken] = useState<Token | null>(null)
   const [expandedPoolToken, setExpandedPoolToken] = useState<string | null>(null)
   const [showBackToTop, setShowBackToTop] = useState(false)
@@ -671,7 +672,7 @@ export function ExploreSection() {
                   {paginatedPools.map((pool: any) => (
                     <div key={pool.id} className="space-y-2">
                       <button
-                        onClick={() => setExpandedPoolToken(pool.id)}
+                        onClick={() => router.push(`/pool/${encodeURIComponent(pool.id)}`)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         <div className="flex items-center shrink-0">
@@ -752,63 +753,6 @@ export function ExploreSection() {
       )}
 
 
-      <Dialog open={!!expandedPoolToken} onOpenChange={(open) => !open && setExpandedPoolToken(null)}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          {(() => {
-            const pool = filteredPools.find((item: any) => item.id === expandedPoolToken) as any
-            if (!pool) return null
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle>{pool.title || `${pool.tokenCode} Pools`}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="text-center py-4 bg-muted rounded-xl">
-                    <div className="text-2xl font-bold">
-                      {pool.totalLockedAsset || "—"} {pool.tokenCode}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
-                      Total {pool.tokenCode} Locked
-                    </div>
-                    <div className="text-sm font-semibold text-purple-600 mt-3">{pool.tvl || "—"} π TVL</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-xl bg-muted p-3">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool fee</div>
-                      <div className="mt-1 text-sm font-semibold">{pool.fee || "—"}</div>
-                    </div>
-                    <div className="rounded-xl bg-muted p-3">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool shares</div>
-                      <div className="mt-1 text-sm font-semibold truncate">{pool.totalShares || "—"}</div>
-                    </div>
-                    <div className="rounded-xl bg-muted p-3 col-span-2">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Last activity</div>
-                      <div className="mt-1 text-sm font-semibold">{pool.lastActive || "—"}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">All Pools</h4>
-                    <div className={cn("space-y-2", pool.allPools?.length > 5 && "max-h-[320px] overflow-y-auto pr-2")}>
-                      {pool.allPools?.map((subPool: any) => (
-                        <div key={subPool.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                          <div>
-                            <div className="text-sm font-medium">{subPool.pair}</div>
-                            <div className="text-xs text-muted-foreground">{subPool.providers} providers</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-semibold">{subPool.lockedToken}</div>
-                            <div className="text-xs text-muted-foreground">locked</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )
-          })()}
-        </DialogContent>
-      </Dialog>
 
     </div>
   )

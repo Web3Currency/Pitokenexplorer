@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Copy, Loader2 } from "lucide-react"
 import type { Token } from "@/lib/mock-data"
 import { useTokenDetails, useTokenPriceHistory, useOrderBook } from "@/lib/use-market-data"
 
 export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; issuer: string }) {
+  const [copied, setCopied] = useState(false)
   const token = {
     symbol: assetCode,
     issuer,
@@ -50,13 +51,22 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
         Market
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-semibold">{assetCode}</h1>
-        <p className="mt-1 break-all text-xs text-muted-foreground">Issuer {issuer}</p>
-      </div>
-
-      <div className="rounded-xl bg-muted py-4 text-center">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Current price</div>
+      <div className="rounded-xl bg-muted px-4 py-5 text-center">
+        <h1 className="text-xl font-semibold">{assetCode}</h1>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(issuer)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1500)
+          }}
+          className="mx-auto mt-2 inline-flex max-w-full items-center gap-2 text-xs text-muted-foreground"
+        >
+          <span className="truncate">{issuer ? `${issuer.slice(0, 4)}...${issuer.slice(-4)}` : "—"}</span>
+          <Copy className="h-3.5 w-3.5 shrink-0" />
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
+        <div className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">Current price</div>
         <div className="mt-1 text-2xl font-bold tabular-nums">
           {displayToken?.price ? `${displayToken.price} π` : "—"}
         </div>
