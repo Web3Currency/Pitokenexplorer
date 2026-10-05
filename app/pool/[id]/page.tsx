@@ -20,7 +20,11 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           <ArrowLeft className="h-4 w-4" />
           Liquidity pools
         </Link>
-        {isLoading && !pool ? (\n          <div className="mt-4">\n            <PoolDetailsSkeleton />\n          </div>\n        ) : !pool ? (
+        {isLoading && !pool ? (
+          <div className="mt-4">
+            <PoolDetailsSkeleton />
+          </div>
+        ) : !pool ? (
           <p className="mt-6 text-sm text-muted-foreground">Pool not found.</p>
         ) : (
           <div className="mt-4 space-y-4 pb-10">
