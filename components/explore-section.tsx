@@ -254,6 +254,24 @@ function UnifiedStatsCard({
   )
 }
 
+
+function ListSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div key={index} className="flex items-center gap-3 rounded-xl bg-card p-3">
+          <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-muted" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-2 w-16 animate-pulse rounded bg-muted/70" />
+          </div>
+          <div className="h-3 w-14 animate-pulse rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function ExploreSection() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("market")
@@ -722,19 +740,16 @@ export function ExploreSection() {
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mb-2" />
-              <p className="text-sm">Fetching live Pi Testnet data...</p>
-            </div>
-          ) : error ? (
+          {activeTab === "market" && error ? (
             <div className="flex flex-col items-center justify-center py-12 text-destructive">
               <AlertCircle className="h-8 w-8 mb-2" />
               <p className="text-sm font-medium">{error}</p>
             </div>
           ) : (
             <>
-              {activeTab === "market" && (
+              {activeTab === "market" && (isLoading ? (
+                <ListSkeleton />
+              ) : (
                 <div className="space-y-2" ref={listContainerRef}>
                   {paginatedTokens.map((token, index) => {
                     const rankMovement = rankMovements[token.id] || "neutral"
@@ -803,9 +818,6 @@ export function ExploreSection() {
                         <ChevronLeft className="h-4 w-4" />
                         Previous
                       </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Page {tokenPage} of {tokenTotalPages}
-                      </span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -819,7 +831,7 @@ export function ExploreSection() {
                     </div>
                   )}
                 </div>
-              )}
+              ))}
 
               {activeTab === "domain" && (
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-card rounded-xl">
@@ -827,13 +839,12 @@ export function ExploreSection() {
                     <Search className="h-8 w-8 opacity-20" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">Coming soon...</h3>
-                  <p className="text-sm max-w-[200px] text-center mt-1">
-                    {"Domain data will be available on Mainnet."}
-                  </p>
                 </div>
               )}
 
-              {activeTab === "liquidityPools" && (
+              {activeTab === "liquidityPools" && (poolsLoading && pools.length === 0 ? (
+                <ListSkeleton />
+              ) : (
                 <div className="space-y-2">
                   {paginatedPools.map((pool: any) => (
                     <div key={pool.id} className="space-y-2">
@@ -917,9 +928,6 @@ export function ExploreSection() {
                         <ChevronLeft className="h-4 w-4" />
                         Previous
                       </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Page {poolPage} of {poolTotalPages}
-                      </span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -933,7 +941,7 @@ export function ExploreSection() {
                     </div>
                   )}
                 </div>
-              )}
+              ))}
             </>
           )}
 
