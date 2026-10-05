@@ -60,7 +60,7 @@ export function TokenPriceChart({ assetCode, assetIssuer }: TokenPriceChartProps
   const gradientId = `priceGradient-${assetCode}`
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl bg-card overflow-hidden">
       {/* Header row */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export function TokenPriceChart({ assetCode, assetIssuer }: TokenPriceChartProps
                   const point = payload[0].payload as TokenPriceDataPoint
                   return (
                     <div
-                      style={{ background: "var(--popover)", border: "1px solid var(--border)" }}
+                      style={{ background: "var(--popover)" }}
                       className="rounded-lg px-3 py-2 shadow-xl"
                     >
                       <div className="text-[10px] text-muted-foreground mb-0.5">

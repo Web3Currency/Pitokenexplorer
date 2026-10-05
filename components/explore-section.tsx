@@ -67,7 +67,7 @@ function UnifiedStatsCard({
 
   if (!stats) {
     return (
-      <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border">
           <div className="p-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
@@ -92,7 +92,7 @@ function UnifiedStatsCard({
 
   return (
     <>
-      <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border">
           <button
             onClick={() => setShowLiquidityDetails(true)}
@@ -153,7 +153,7 @@ function UnifiedStatsCard({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="text-3xl font-bold text-center">{stats.liquidity || "—"}</div>
               <div className="text-sm text-muted-foreground text-center mt-1">Total Network Liquidity</div>
             </div>
@@ -211,7 +211,7 @@ function UnifiedStatsCard({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="text-3xl font-bold text-center">{stats.tokenCount?.toLocaleString() ?? "—"}</div>
               <div className="text-sm text-muted-foreground text-center mt-1">Live Tokens Listed</div>
             </div>
@@ -504,7 +504,7 @@ export function ExploreSection() {
         <div className="p-4 space-y-4">
           <div ref={heroRef}><UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} /></div>
 
-          <div className="flex gap-1 overflow-x-auto pb-2 border-b border-border scrollbar-hide">
+          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
             {[
               { id: "market", label: "Market" },
               { id: "liquidityPools", label: "Liquidity Pools" },
@@ -531,12 +531,12 @@ export function ExploreSection() {
                   <PopoverTrigger asChild>
                     <button
                       className={cn(
-                        "p-2 bg-card border border-border rounded-lg hover:bg-muted transition-colors shrink-0 relative",
+                        "p-2 bg-muted rounded-lg hover:bg-muted/70 transition-colors shrink-0 relative",
                         (activeFilters.category.length > 0 ||
                           activeFilters.verified?.length > 0 ||
                           activeFilters.liquidity.length > 0 ||
                           activeFilters.change24h.length > 0) &&
-                          "border-primary text-primary",
+                          "bg-primary/15 text-primary",
                       )}
                     >
                       <Filter className="h-4 w-4" />
@@ -548,7 +548,7 @@ export function ExploreSection() {
                       )}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0 shadow-xl border-border bg-card" align="start">
+                  <PopoverContent className="w-[280px] p-0 shadow-xl border-0 bg-card" align="start">
                     <div className="p-4 border-b border-border flex items-center justify-between">
                       <h3 className="font-semibold text-sm">Filters</h3>
                       <button onClick={() => setIsFilterOpen(false)}>
@@ -693,8 +693,8 @@ export function ExploreSection() {
                 <button
                   onClick={() => setLiquiditySortAsc(!liquiditySortAsc)}
                   className={cn(
-                    "p-2 bg-card border border-border rounded-lg hover:bg-muted transition-colors shrink-0 flex items-center gap-1.5",
-                    "border-primary/50",
+                    "p-2 bg-muted rounded-lg hover:bg-muted/70 transition-colors shrink-0 flex items-center gap-1.5",
+                    "bg-primary/15 text-primary",
                   )}
                   title={liquiditySortAsc ? "Sorted: Lowest liquidity first" : "Sorted: Highest liquidity first"}
                 >
@@ -717,7 +717,7 @@ export function ExploreSection() {
                       ? "Search pools..."
                       : "Search tokens..."
                 }
-                className="pl-9 bg-card border-border"
+                className="pl-9 bg-muted border-0 shadow-none"
               />
             </div>
           </div>
@@ -743,7 +743,7 @@ export function ExploreSection() {
                       <button
                         key={`${token.id}-${index}`}
                         onClick={() => setSelectedToken(token as Token)}
-                        className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-xl hover:bg-muted transition-colors text-left"
+                        className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         {/* ENFORCE: Logo from admin ONLY - no fallbacks, no generated icons */}
                         {(token as any).logoUrl ? (
@@ -822,7 +822,7 @@ export function ExploreSection() {
               )}
 
               {activeTab === "domain" && (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-card border border-border rounded-xl">
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-card rounded-xl">
                   <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                     <Search className="h-8 w-8 opacity-20" />
                   </div>
@@ -839,7 +839,7 @@ export function ExploreSection() {
                     <div key={pool.id} className="space-y-2">
                       <button
                         onClick={() => setExpandedPoolToken(expandedPoolToken === pool.id ? null : pool.id)}
-                        className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-xl hover:bg-muted transition-colors text-left"
+                        className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         <div className="flex items-center shrink-0">
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white text-xl">
@@ -856,7 +856,7 @@ export function ExploreSection() {
                       </button>
 
                       {expandedPoolToken === pool.id && (
-                        <div className="bg-card border border-border rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="bg-muted rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                           <div className="text-center py-4 bg-muted/30 rounded-xl">
                             <div className="text-2xl font-bold">
                               {pool.totalLockedAsset || "—"} {pool.tokenCode}
@@ -937,7 +937,7 @@ export function ExploreSection() {
             </>
           )}
 
-          <footer className="mt-8 border-t border-border pt-6 pb-10 text-sm text-muted-foreground">
+          <footer className="mt-8 pt-6 pb-10 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Pi Token Explorer</p>
             <p className="mt-1 max-w-md leading-relaxed">
               Testnet explorer for Pi Network tokens, liquidity pools, and domains.

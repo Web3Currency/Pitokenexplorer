@@ -23,7 +23,7 @@ export function ProfileMenu() {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-80 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 border-l border-border/50"
+        className="w-80 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 border-0"
       >
         <SheetHeader className="pb-2">
           <SheetTitle className="text-lg font-semibold">Profile</SheetTitle>
@@ -31,7 +31,7 @@ export function ProfileMenu() {
 
         <div className="mt-2 space-y-3">
           <Collapsible open={settingsExpanded} onOpenChange={setSettingsExpanded}>
-            <div className="rounded-xl bg-card/50 border border-border/40 overflow-hidden">
+            <div className="rounded-xl bg-card overflow-hidden">
               <CollapsibleTrigger className="w-full">
                 <div className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Settings</span>
@@ -87,7 +87,7 @@ export function ProfileMenu() {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="px-3 pb-3">
-                        <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+                        <div className="rounded-lg bg-muted p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium">PI (π)</span>
                             <span className="h-2 w-2 rounded-full bg-primary" />

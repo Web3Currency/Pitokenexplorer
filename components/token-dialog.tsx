@@ -90,7 +90,7 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
-        <div className="sticky top-0 bg-card z-10 border-b border-border p-4">
+        <div className="sticky top-0 bg-card z-10 p-4">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div
@@ -142,7 +142,7 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
           </div>
 
           {showAIAnalysis && (
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-sm">AI Analysis</span>
@@ -156,7 +156,7 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
           )}
 
           {/* Stats grid */}
-          <div className="rounded-xl border border-border overflow-hidden">
+          <div className="rounded-xl bg-card overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-y divide-border">
               {[
                 {

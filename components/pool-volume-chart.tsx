@@ -112,7 +112,7 @@ export function PoolVolumeChart({ poolId, tokenCode }: PoolVolumeChartProps) {
                     if (!active || !payload?.length) return null
                     const data = payload[0].payload as PoolVolumeDataPoint
                     return (
-                      <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg">
+                      <div className="bg-popover rounded-lg px-3 py-2 shadow-lg">
                         <div className="text-xs text-muted-foreground">{formatTimestamp(data.timestamp)}</div>
                         <div className="text-sm font-semibold">{formatVolume(data.volumePI)} PI</div>
                       </div>
