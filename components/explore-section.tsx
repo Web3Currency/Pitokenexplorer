@@ -682,7 +682,7 @@ export function ExploreSection() {
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">Coming soon...</h3>
                 </div>
-              )
+              }
 
               {activeTab === "liquidityPools" && (poolsLoading && pools.length === 0 ? (
                 <ListSkeleton />
