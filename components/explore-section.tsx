@@ -238,21 +238,28 @@ function UnifiedStatsCard({
 }
 
 
-function ListSkeleton({ rows = 6 }: { rows?: number }) {
+function TokenListSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="space-y-2" aria-hidden="true">
+    <div className="space-y-2" aria-busy="true" aria-live="polite">
       {Array.from({ length: rows }).map((_, index) => (
-        <div key={index} className="flex items-center gap-3 rounded-xl bg-card p-3">
+        <div key={index} className="w-full flex items-center gap-3 p-3 bg-card rounded-xl">
           <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-muted" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-            <div className="h-2 w-16 animate-pulse rounded bg-muted/70" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-2.5 w-28 animate-pulse rounded bg-muted/70" />
           </div>
-          <div className="h-3 w-14 animate-pulse rounded bg-muted" />
+          <div className="flex flex-col items-end gap-2">
+            <div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-3.5 w-3.5 animate-pulse rounded bg-muted/70" />
+          </div>
         </div>
       ))}
     </div>
   )
+}
+
+function ListSkeleton({ rows = 6 }: { rows?: number }) {
+  return <TokenListSkeleton rows={rows} />
 }
 
 export function ExploreSection() {
@@ -315,7 +322,7 @@ export function ExploreSection() {
 
   const rankMovements = useRankMovement(tokensWithPrices)
 
-  const isLoading = tokensLoading && tokens.length === 0
+  const isLoading = tokens.length === 0 && !tokensError && (tokensLoading || !tokens)
   const error = tokensError?.message || null
 
   const [isFilterOpen, setIsFilterOpen] = useState(false)
