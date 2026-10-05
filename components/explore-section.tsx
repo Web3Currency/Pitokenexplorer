@@ -574,7 +574,14 @@ export function ExploreSection() {
                   >
                     {icon}
                     {isActive && (
-                      <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
+                      <>
+                        {liquiditySortAsc ? (
+                          <ArrowUp className="h-3 w-3" aria-hidden="true" />
+                        ) : (
+                          <ArrowDown className="h-3 w-3" aria-hidden="true" />
+                        )}
+                        <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
+                      </>
                     )}
                   </button>
                 )
