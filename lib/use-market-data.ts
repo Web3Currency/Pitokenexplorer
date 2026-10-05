@@ -91,6 +91,7 @@ interface MarketStatsInstant {
 interface MarketStatsDeferred {
   liquidityChange: string | null
   volume24hChange: string | null
+  totalVolume24h: string | null
   tokenCountChange: string | null
   newTokens7d?: number
 }
@@ -98,6 +99,7 @@ interface MarketStatsDeferred {
 interface CombinedMarketStats extends MarketStatsInstant {
   liquidityChange?: string | null
   volume24hChange?: string | null
+  totalVolume24h?: string | null
   tokenCountChange?: string | null
   newTokens7d?: number
 }
@@ -126,6 +128,7 @@ export function useMarketStats() {
         ...instant,
         liquidityChange: deferred?.liquidityChange ?? null,
         volume24hChange: deferred?.volume24hChange ?? null,
+        totalVolume24h: deferred?.totalVolume24h ?? null,
         tokenCountChange: deferred?.tokenCountChange ?? null,
         newTokens7d: deferred?.newTokens7d ?? undefined,
       }
@@ -167,6 +170,7 @@ interface TokenDetailsResponse {
   poolId: string | null
   athPrice?: string | null
   atlPrice?: string | null
+  volume24h?: string | null
 }
 
 export function useTokenDetails(assetCode: string | null, issuer: string | null) {

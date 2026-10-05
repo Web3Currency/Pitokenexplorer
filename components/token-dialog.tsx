@@ -111,7 +111,7 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
 
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "24h volume", value: token.volume || "—" },
+              { label: "24h volume", value: (displayToken as any)?.volume24h ? `${(displayToken as any).volume24h} π` : token.volume || "—" },
               { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
               { label: "Trustlines", value: String(displayToken?.trustlines ?? 0) },
               { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },

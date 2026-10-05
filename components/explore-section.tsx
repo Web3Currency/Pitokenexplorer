@@ -169,6 +169,12 @@ function UnifiedStatsCard({
                 </span>
               </div>
               <div className="flex justify-between">
+                <span className="text-muted-foreground">24h Volume</span>
+                <span className="font-semibold">
+                  {isDeferredLoading ? <Loader2 className="h-3 w-3 animate-spin inline" /> : stats.totalVolume24h || "—"}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">24h Volume Change</span>
                 <span className={`font-semibold ${getChangeColor(stats.volume24hChange)}`}>
                   {isDeferredLoading ? (

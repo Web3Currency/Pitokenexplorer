@@ -77,6 +77,7 @@ export interface MarketStats {
   liquidity: string
   liquidityChange: string | null
   volume24hChange?: string | null
+  totalVolume24h?: string | null
   tokenCount: number
   tokenCountChange: string | null
   poolCount: number

@@ -77,13 +77,14 @@ export interface MarketStatsInstant {
 export interface MarketStatsDeferred {
   liquidityChange: string | null
   volume24hChange: string | null
+  totalVolume24h: string | null
   tokenCountChange: string | null
   newTokens7d: number
 }
 
 export interface MarketStatsData extends MarketStatsInstant {
   liquidityChange: string | null
-  totalVolume24h: null
+  totalVolume24h: string | null
   volume24hChange: string | null
   tokenCountChange: null
 }
@@ -101,6 +102,7 @@ export interface TokenDetailsData {
   poolId: string | null
   athPrice: string | null // Added ATH price
   atlPrice: string | null // Added ATL price
+  volume24h: string | null
 }
 
 export interface PoolVolumeDataPoint {
@@ -347,7 +349,7 @@ export async function getMarketStats(): Promise<MarketStatsData> {
     const stats: MarketStatsData = {
       ...instant,
       liquidityChange: deferredCached.liquidityChange,
-      totalVolume24h: null,
+      totalVolume24h: deferredCached.totalVolume24h ?? null,
       volume24hChange: deferredCached.volume24hChange,
       tokenCountChange: null,
     }
@@ -359,12 +361,13 @@ export async function getMarketStats(): Promise<MarketStatsData> {
   const pools = await fetchCachedPools()
   const liquidityChange = await calculateLiquidity24hChange(pools)
   const volume24hChange = await calculateVolume24hChange(pools)
+  const totalVolume24h = await calculateTotalVolume24h(pools)
   const newTokens7d = await calculateNewTokens7d(pools)
 
   const stats: MarketStatsData = {
     ...instant,
     liquidityChange: liquidityChange,
-    totalVolume24h: null,
+    totalVolume24h,
     volume24hChange: volume24hChange,
     tokenCountChange: null,
   }
@@ -478,12 +481,14 @@ export async function getMarketStatsDeferred(): Promise<MarketStatsDeferred> {
   // These are the slow calculations that were blocking render
   const liquidityChange = await calculateLiquidity24hChange(pools)
   const volume24hChange = await calculateVolume24hChange(pools)
+  const totalVolume24h = await calculateTotalVolume24h(pools)
 
   const newTokens7d = await calculateNewTokens7d(pools)
 
   const deferred: MarketStatsDeferred = {
     liquidityChange,
     volume24hChange,
+    totalVolume24h,
     tokenCountChange: null,
     newTokens7d,
   }
@@ -541,11 +546,12 @@ export async function getMarketStatsFull(): Promise<MarketStatsData> {
 
   const liquidityChange = await calculateLiquidity24hChange(pools)
   const volume24hChange = await calculateVolume24hChange(pools)
+  const totalVolume24h = await calculateTotalVolume24h(pools)
 
   const stats: MarketStatsData = {
     liquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() + " π" : "0 π",
     liquidityChange: liquidityChange,
-    totalVolume24h: null,
+    totalVolume24h,
     volume24hChange: volume24hChange,
     tokenCount: totalTokens.size,
     tokenCountChange: null,
@@ -700,6 +706,7 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
     poolId: mainPool?.pool.id || null,
     athPrice: null,
     atlPrice: null,
+    volume24h: mainPool ? await sumPoolPiVolume24h(mainPool.pool.id) : null,
   }
 
   // Cache with PRICES TTL (shorter) since price is the most time-sensitive
@@ -1424,6 +1431,71 @@ async function calculateLiquidity24hChange(pools: PoolData[]): Promise<string | 
     console.error("Error calculating 24h liquidity change:", error)
     return null
   }
+}
+
+
+async function sumPoolPiVolume24h(poolId: string): Promise<string | null> {
+  const now = Date.now()
+  const hours24Ago = now - 24 * 60 * 60 * 1000
+  let volume = 0
+  let sawTrade = false
+  let nextUrl: string | null = `${PI_HORIZON_URL}/liquidity_pools/${poolId}/trades?limit=200&order=desc`
+  let pageCount = 0
+
+  while (nextUrl && pageCount < 2) {
+    try {
+      const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
+      if (!response.ok) break
+      const data: any = await response.json()
+      const records = data._embedded?.records ?? []
+      if (records.length === 0) break
+
+      let reachedOlder = false
+      for (const trade of records) {
+        const tradeTime = new Date(trade.ledger_close_time || trade.created_at).getTime()
+        if (Number.isNaN(tradeTime) || tradeTime < hours24Ago) {
+          reachedOlder = true
+          continue
+        }
+        const piAmount = trade.base_asset_type === "native"
+          ? Number.parseFloat(trade.base_amount)
+          : trade.counter_asset_type === "native"
+            ? Number.parseFloat(trade.counter_amount)
+            : 0
+        if (!piAmount) continue
+        sawTrade = true
+        volume += piAmount
+      }
+
+      if (reachedOlder || records.length < 200) break
+      nextUrl = data._links?.next?.href || null
+      pageCount++
+    } catch {
+      break
+    }
+  }
+
+  if (!sawTrade) return "0"
+  return volume.toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
+
+async function calculateTotalVolume24h(pools: PoolData[]): Promise<string | null> {
+  const ranked = [...pools].sort((a, b) => {
+    const aPi = Number.parseFloat(a.reserves.find((r) => r.asset === "native")?.amount || "0")
+    const bPi = Number.parseFloat(b.reserves.find((r) => r.asset === "native")?.amount || "0")
+    return bPi - aPi
+  }).slice(0, 12)
+
+  let total = 0
+  let saw = false
+  for (const pool of ranked) {
+    const volume = await sumPoolPiVolume24h(pool.id)
+    const amount = Number.parseFloat(String(volume ?? "0").replace(/,/g, ""))
+    if (volume !== null) saw = true
+    total += amount
+  }
+  if (!saw) return null
+  return `${total.toLocaleString(undefined, { maximumFractionDigits: 2 })} π`
 }
 
 async function calculateVolume24hChange(pools: PoolData[]): Promise<string | null> {
