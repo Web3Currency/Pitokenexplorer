@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import {
   Search,
@@ -27,7 +28,6 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { TokenDialog } from "./token-dialog"
 import { MobileTooltip } from "@/components/ui/tooltip"
 import type { Token, Domain, MarketStats } from "@/lib/mock-data"
 import { useTokenRegistry, useLiquidityPools, useMarketStats, useTokenPrices, useDomains } from "@/lib/use-market-data"
@@ -264,6 +264,7 @@ function ListSkeleton({ rows = 6 }: { rows?: number }) {
 }
 
 export function ExploreSection() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("market")
   const [selectedToken, setSelectedToken] = useState<Token | null>(null)
@@ -578,7 +579,7 @@ export function ExploreSection() {
                     return (
                       <button
                         key={`${token.id}-${index}`}
-                        onClick={() => setSelectedToken(token as Token)}
+                        onClick={() => router.push(`/token/${encodeURIComponent(token.symbol)}?issuer=${encodeURIComponent((token as any).fullIssuer || "")}`)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         {/* ENFORCE: Logo from admin ONLY - no fallbacks, no generated icons */}
@@ -809,11 +810,6 @@ export function ExploreSection() {
         </DialogContent>
       </Dialog>
 
-      <TokenDialog
-        token={selectedToken}
-        open={!!selectedToken}
-        onOpenChange={(open) => !open && setSelectedToken(null)}
-      />
     </div>
   )
 }

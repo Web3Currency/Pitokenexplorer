@@ -237,3 +237,12 @@ export function useTokenPriceHistory(assetCode: string | null, issuer: string | 
     },
   )
 }
+
+export function useOrderBook(assetCode: string | null, issuer: string | null) {
+  const shouldFetch = Boolean(assetCode && issuer)
+  return useSWR(
+    shouldFetch ? `/api/explorer/tokens/${assetCode}/orderbook?issuer=${issuer}` : null,
+    fetcher,
+    { ...baseSwrConfig, refreshInterval: 30000, revalidateOnMount: true },
+  )
+}

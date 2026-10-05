@@ -1783,3 +1783,50 @@ async function fetchAssetStatsWithHoldersForVerification(
     return { trustlines: 0, holderCount: 0 }
   }
 }
+
+export interface OrderBookLevel {
+  price: string
+  amount: string
+}
+
+export interface OrderBookData {
+  bestBid: string | null
+  bestAsk: string | null
+  spread: string | null
+  bids: OrderBookLevel[]
+  asks: OrderBookLevel[]
+}
+
+export async function getOrderBook(assetCode: string, assetIssuer: string): Promise<OrderBookData> {
+  const empty = { bestBid: null, bestAsk: null, spread: null, bids: [], asks: [] }
+  try {
+    const assetType = assetCode.length > 4 ? "credit_alphanum12" : "credit_alphanum4"
+    const url = `${PI_HORIZON_URL}/order_book?selling_asset_type=${assetType}&selling_asset_code=${encodeURIComponent(assetCode)}&selling_asset_issuer=${encodeURIComponent(assetIssuer)}&buying_asset_type=native&limit=10`
+    const response: any = await fetch(url, { next: { revalidate: 30 } })
+    if (!response.ok) return empty
+    const data: any = await response.json()
+    const bids = (data.bids || []).slice(0, 5).map((level: any) => ({
+      price: Number.parseFloat(level.price).toFixed(6),
+      amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }),
+    }))
+    const asks = (data.asks || []).slice(0, 5).map((level: any) => ({
+      price: Number.parseFloat(level.price).toFixed(6),
+      amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }),
+    }))
+    const bestBid = bids[0] ? Number.parseFloat(bids[0].price) : null
+    const bestAsk = asks[0] ? Number.parseFloat(asks[0].price) : null
+    const spread = bestBid != null && bestAsk != null && bestBid > 0
+      ? `${(((bestAsk - bestBid) / bestBid) * 100).toFixed(2)}%`
+      : null
+    return {
+      bestBid: bestBid != null ? `${bestBid.toFixed(6)} π` : null,
+      bestAsk: bestAsk != null ? `${bestAsk.toFixed(6)} π` : null,
+      spread,
+      bids,
+      asks,
+    }
+  } catch (error) {
+    console.error("Error fetching order book:", error)
+    return empty
+  }
+}
