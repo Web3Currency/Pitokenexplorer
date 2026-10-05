@@ -20,6 +20,10 @@ import {
   ChevronRight,
   ArrowDown,
   Minus,
+  Droplets,
+  Clock3,
+  Globe2,
+  Pi,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -480,7 +484,8 @@ export function ExploreSection() {
         <div className="min-h-full flex flex-col gap-4 p-4">
           <div ref={heroRef}><UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} /></div>
 
-          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="sticky top-0 z-30 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
             {[
               { id: "market", label: "Market" },
               { id: "liquidityPools", label: "Liquidity Pools" },
@@ -498,6 +503,7 @@ export function ExploreSection() {
                 {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
               </button>
             ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -516,7 +522,7 @@ export function ExploreSection() {
                 className="h-11 pl-9 bg-muted border-0 shadow-none rounded-xl"
               />
             </div>
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex items-center gap-2 overflow-x-auto">
               {(activeTab === "market"
                 ? [
                     ["price", "Price"],
@@ -529,26 +535,45 @@ export function ExploreSection() {
                       ["name", "Name"],
                     ]
                   : [["name", "Name"]]
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    if (sortBy === key) setLiquiditySortAsc((current) => !current)
-                    else {
-                      setSortBy(key as "price" | "liquidity" | "change24h")
-                      setLiquiditySortAsc(false)
-                    }
-                  }}
-                  className={cn(
-                    "shrink-0 rounded-full bg-muted px-3 py-1.5 text-xs font-medium",
-                    sortBy === key && "bg-primary/15 text-primary",
-                  )}
-                >
-                  {label}
-                  {sortBy === key ? (liquiditySortAsc ? " ↑" : " ↓") : ""}
-                </button>
-              ))}
+              ).map(([key, label]) => {
+                const isActive = sortBy === key
+                const SortDirection = isActive ? (liquiditySortAsc ? ArrowUp : ArrowDown) : ArrowUpDown
+                const Icon =
+                  activeTab === "market" && key === "price"
+                    ? Pi
+                    : activeTab === "market" && key === "liquidity"
+                      ? Droplets
+                      : activeTab === "market" && key === "change24h"
+                        ? Clock3
+                        : activeTab === "domain"
+                          ? Globe2
+                          : SortDirection
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    title={label}
+                    aria-label={"Sort by " + label + (isActive ? (liquiditySortAsc ? ", ascending" : ", descending") : "")}
+                    onClick={() => {
+                      if (sortBy === key) setLiquiditySortAsc((current) => !current)
+                      else {
+                        setSortBy(key as "price" | "liquidity" | "change24h" | "tvl" | "name")
+                        setLiquiditySortAsc(false)
+                      }
+                    }}
+                    className={cn(
+                      "shrink-0 inline-flex h-8 w-8 items-center justify-center bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground",
+                      isActive && "text-primary",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {isActive && (
+                      <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -646,13 +671,13 @@ export function ExploreSection() {
               ))}
 
               {activeTab === "domain" && (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-card rounded-xl">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                    <Search className="h-8 w-8 opacity-20" />
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                  <div className="w-16 h-16 flex items-center justify-center mb-4">
+                    <Globe2 className="h-10 w-10 opacity-20" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">Coming soon...</h3>
                 </div>
-              )}
+              )
 
               {activeTab === "liquidityPools" && (poolsLoading && pools.length === 0 ? (
                 <ListSkeleton />
@@ -710,23 +735,6 @@ export function ExploreSection() {
             </>
           )}
 
-          <footer className="mt-auto pt-6 pb-10 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Pi Token Explorer</p>
-            <p className="mt-1 max-w-md leading-relaxed">
-              Testnet explorer for Pi Network tokens, liquidity pools, and domains.
-            </p>
-            <p className="mt-4">
-              Built by{" "}
-              <a
-                href="https://web3currency.online"
-                target="_blank"
-                rel="noreferrer"
-                className="text-foreground underline-offset-2 hover:underline"
-              >
-                W3C Digital Network
-              </a>
-            </p>
-          </footer>
         </div>
       </div>
 
