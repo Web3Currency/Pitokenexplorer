@@ -539,7 +539,7 @@ export function ExploreSection() {
                 const SortDirection = isActive ? (liquiditySortAsc ? ArrowUp : ArrowDown) : ArrowUpDown
                 const Icon =
                   activeTab === "market" && key === "price"
-                    ? Pi
+                    ? Globe2
                     : activeTab === "market" && key === "liquidity"
                       ? Droplets
                       : activeTab === "market" && key === "change24h"
