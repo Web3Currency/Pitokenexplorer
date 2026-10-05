@@ -157,18 +157,7 @@ function UnifiedStatsCard({
               <div className="text-3xl font-bold text-center">{stats.liquidity || "—"}</div>
               <div className="text-sm text-muted-foreground text-center mt-1">Total Network Liquidity</div>
             </div>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">24h Liquidity Change</span>
-                <span className={`font-semibold ${getChangeColor(stats.liquidityChange)}`}>
-                  {isDeferredLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin inline" />
-                  ) : (
-                    stats.liquidityChange || "—"
-                  )}
-                </span>
-              </div>
-              <div className="flex justify-between">
+            <div className="space-y-3 text-sm"><div className="flex justify-between">
                 <span className="text-muted-foreground">24h Volume</span>
                 <span className="font-semibold">
                   {isDeferredLoading ? <Loader2 className="h-3 w-3 animate-spin inline" /> : stats.totalVolume24h || "—"}
@@ -488,7 +477,7 @@ export function ExploreSection() {
   return (
     <div className="flex flex-col h-full">
   <div ref={scrollRef} className="flex-1 overflow-y-auto explore-scroll-container">
-        <div className="p-4 space-y-4">
+        <div className="min-h-full flex flex-col gap-4 p-4">
           <div ref={heroRef}><UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} /></div>
 
           <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
@@ -721,7 +710,7 @@ export function ExploreSection() {
             </>
           )}
 
-          <footer className="mt-8 pt-6 pb-10 text-sm text-muted-foreground">
+          <footer className="mt-auto pt-6 pb-10 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Pi Token Explorer</p>
             <p className="mt-1 max-w-md leading-relaxed">
               Testnet explorer for Pi Network tokens, liquidity pools, and domains.
