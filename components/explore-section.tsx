@@ -266,6 +266,8 @@ export function ExploreSection() {
   const [tokenPage, setTokenPage] = useState(1)
   const [poolPage, setPoolPage] = useState(1)
   const listContainerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
 
   const { data: tokens = [], isLoading: tokensLoading, error: tokensError } = useTokenRegistry()
   const { data: pools = [], isLoading: poolsLoading } = useLiquidityPools()
@@ -341,19 +343,22 @@ export function ExploreSection() {
   const changeBuckets = ["≤-50%", "-10% to -50%", "0% to -10%", "0% to +10%", "+10% to +50%", "≥+50%"]
 
   useEffect(() => {
-    const container = document.querySelector(".explore-scroll-container")
-    const handleScroll = () => {
-      if (container) {
-        setShowBackToTop(container.scrollTop > 300)
-      }
-    }
-    container?.addEventListener("scroll", handleScroll)
-    return () => container?.removeEventListener("scroll", handleScroll)
-  }, [])
+    const hero = heroRef.current
+    if (!hero) return
+
+    const scrollRoot = scrollRef.current
+    const root = scrollRoot && scrollRoot.scrollHeight > scrollRoot.clientHeight + 8 ? scrollRoot : null
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowBackToTop(!entry.isIntersecting),
+      { root, threshold: 0, rootMargin: "-8px 0px 0px 0px" },
+    )
+    observer.observe(hero)
+    return () => observer.disconnect()
+  }, [activeTab, stats])
 
   const scrollToTop = () => {
-    const container = document.querySelector(".explore-scroll-container")
-    container?.scrollTo({ top: 0, behavior: "smooth" })
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleApplyFilters = () => {
@@ -495,9 +500,9 @@ export function ExploreSection() {
 
   return (
     <div className="flex flex-col h-full">
-  <div className="flex-1 overflow-y-auto explore-scroll-container">
+  <div ref={scrollRef} className="flex-1 overflow-y-auto explore-scroll-container">
         <div className="p-4 space-y-4">
-          <UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} />
+          <div ref={heroRef}><UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} /></div>
 
           <div className="flex gap-1 overflow-x-auto pb-2 border-b border-border scrollbar-hide">
             {[
@@ -931,13 +936,33 @@ export function ExploreSection() {
               )}
             </>
           )}
+
+          <footer className="mt-8 border-t border-border pt-6 pb-10 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">Pi Token Explorer</p>
+            <p className="mt-1 max-w-md leading-relaxed">
+              Testnet explorer for Pi Network tokens, liquidity pools, and domains.
+            </p>
+            <p className="mt-4">
+              Built by{" "}
+              <a
+                href="https://web3currency.online"
+                target="_blank"
+                rel="noreferrer"
+                className="text-foreground underline-offset-2 hover:underline"
+              >
+                W3C Digital Network
+              </a>
+            </p>
+          </footer>
         </div>
       </div>
 
-      {showBackToTop && (
+      {showBackToTop && (activeTab === "market" || activeTab === "liquidityPools" || activeTab === "domain") && (
         <button
+          type="button"
           onClick={scrollToTop}
-          className="fixed bottom-24 right-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors z-50"
+          aria-label="Back to top"
+          className="fixed bottom-5 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
         >
           <ArrowUp className="h-5 w-5" />
         </button>
