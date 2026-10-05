@@ -23,7 +23,6 @@ import {
   Droplets,
   Clock3,
   Globe2,
-  Pi,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -549,6 +548,12 @@ export function ExploreSection() {
                           ? Globe2
                           : SortDirection
 
+                const icon = activeTab === "market" && key === "price" ? (
+                  <span className="text-base font-semibold leading-none" aria-hidden="true">π</span>
+                ) : (
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                )
+
                 return (
                   <button
                     key={key}
@@ -567,7 +572,7 @@ export function ExploreSection() {
                       isActive && "text-primary",
                     )}
                   >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {icon}
                     {isActive && (
                       <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
                     )}
