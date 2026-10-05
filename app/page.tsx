@@ -5,7 +5,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 min-h-0 overflow-hidden">
         <ExploreSection />
       </main>
     </div>
