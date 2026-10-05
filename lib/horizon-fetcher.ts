@@ -133,12 +133,12 @@ export async function fetchCachedPools(): Promise<PoolData[]> {
 
   while (url && pageCount < PAGINATION_LIMITS.POOLS_MAX_PAGES) {
     try {
-      const response = await fetch(url, {
+      const response: any = await fetch(url, {
         next: { revalidate: 900 }, // 15 min revalidation hint
       })
       if (!response.ok) break
 
-      const data = await response.json()
+      const data: any = await response.json()
       const records = data._embedded?.records ?? []
       if (records.length === 0) break
 
@@ -730,10 +730,10 @@ async function fetchAssetStatsWithHolders(
     let iterations = 0
 
     while (nextUrl && iterations < PAGINATION_LIMITS.ACCOUNTS_MAX_PAGES) {
-      const accRes = await fetch(nextUrl, { next: { revalidate: 300 } })
+      const accRes: any = await fetch(nextUrl, { next: { revalidate: 300 } })
       if (!accRes.ok) break
 
-      const data = await accRes.json()
+      const data: any = await accRes.json()
       const records = data._embedded?.records || []
 
       if (records.length === 0) break
@@ -890,12 +890,12 @@ async function fetchPoolOperations(poolId: string, sinceTimestamp: number): Prom
 
   while (nextUrl && pageCount < PAGINATION_LIMITS.OPERATIONS_MAX_PAGES) {
     try {
-      const response = await fetch(nextUrl, {
+      const response: any = await fetch(nextUrl, {
         next: { revalidate: 600 }, // 10 min revalidation
       })
       if (!response.ok) break
 
-      const data = await response.json()
+      const data: any = await response.json()
       const records = data._embedded?.records ?? []
       if (records.length === 0) break
 
@@ -1123,7 +1123,7 @@ async function fetchPoolOperationsForPrice(poolId: string, sinceTimestamp: numbe
 
   while (nextUrl && pageCount < PAGINATION_LIMITS.OPERATIONS_MAX_PAGES) {
     try {
-      const response = await fetch(nextUrl, {
+      const response: any = await fetch(nextUrl, {
         next: { revalidate: 600 }, // 10 min revalidation
       })
       if (!response.ok) {
@@ -1131,7 +1131,7 @@ async function fetchPoolOperationsForPrice(poolId: string, sinceTimestamp: numbe
         break
       }
 
-      const data = await response.json()
+      const data: any = await response.json()
       const records = data._embedded?.records || []
 
       if (records.length === 0) break
@@ -1349,10 +1349,10 @@ async function calculateLiquidity24hChange(pools: PoolData[]): Promise<string | 
 
       while (nextUrl && pageCount < 2 && sampleLimit < 200) {
         try {
-          const response = await fetch(nextUrl, { next: { revalidate: 600 } })
+          const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
           if (!response.ok) break
 
-          const data = await response.json()
+          const data: any = await response.json()
           const records = data._embedded?.records ?? []
           if (records.length === 0) break
 
@@ -1428,10 +1428,10 @@ async function calculateVolume24hChange(pools: PoolData[]): Promise<string | nul
 
       while (nextUrl && pageCount < 2 && operationCount < 200) {
         try {
-          const response = await fetch(nextUrl, { next: { revalidate: 600 } })
+          const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
           if (!response.ok) break
 
-          const data = await response.json()
+          const data: any = await response.json()
           const records = data._embedded?.records ?? []
           if (records.length === 0) break
 
@@ -1548,14 +1548,14 @@ async function getTokenFirstSeenTime(poolId: string): Promise<number | null> {
 
   try {
     // Fetch the oldest operations for this pool
-    const response = await fetch(
+    const response: any = await fetch(
       `${PI_HORIZON_URL}/liquidity_pools/${poolId}/operations?limit=1&order=asc`,
       { next: { revalidate: 3600 } }, // Cache for 1 hour since this doesn't change
     )
 
     if (!response.ok) return null
 
-    const data = await response.json()
+    const data: any = await response.json()
     const records = data._embedded?.records ?? []
 
     if (records.length === 0) return null
@@ -1675,13 +1675,13 @@ async function fetchAssetStatsWithHoldersForVerification(
 ): Promise<{ trustlines: number; holderCount: number }> {
   try {
     const assetParam = `${assetCode}:${assetIssuer}`
-    const accRes = await fetch(`${PI_HORIZON_URL}/accounts?asset=${assetParam}&limit=1`, { next: { revalidate: 300 } })
+    const accRes: any = await fetch(`${PI_HORIZON_URL}/accounts?asset=${assetParam}&limit=1`, { next: { revalidate: 300 } })
 
     if (!accRes.ok) {
       return { trustlines: 0, holderCount: 0 }
     }
 
-    const data = await accRes.json()
+    const data: any = await accRes.json()
     const records = data._embedded?.records || []
 
     // If we get any records, the asset has trustlines

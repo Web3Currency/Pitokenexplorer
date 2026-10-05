@@ -737,7 +737,7 @@ export function ExploreSection() {
                     return (
                       <button
                         key={`${token.id}-${index}`}
-                        onClick={() => setSelectedToken(token)}
+                        onClick={() => setSelectedToken(token as Token)}
                         className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         {/* ENFORCE: Logo from admin ONLY - no fallbacks, no generated icons */}

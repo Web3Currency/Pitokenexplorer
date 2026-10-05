@@ -129,8 +129,8 @@ export function useMarketStats() {
         liquidityChange: deferred?.liquidityChange ?? null,
         volume24hChange: deferred?.volume24hChange ?? null,
         tokenCountChange: deferred?.tokenCountChange ?? null,
-        newTokens7d: deferred?.newTokens7d ?? null,
-        verifiedTokensCount: deferred?.verifiedTokensCount ?? null,
+        newTokens7d: deferred?.newTokens7d ?? undefined,
+        verifiedTokensCount: deferred?.verifiedTokensCount ?? undefined,
       }
     : undefined
 
