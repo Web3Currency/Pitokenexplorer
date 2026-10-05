@@ -21,7 +21,7 @@ import {
   ArrowDown,
   Minus,
   Droplets,
-  Clock3,
+  Clock,
   Globe2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -560,7 +560,7 @@ export function ExploreSection() {
                     ) : activeTab === "market" && key === "liquidity" ? (
                       <Droplets className="h-4 w-4" aria-hidden="true" />
                     ) : activeTab === "market" && key === "change24h" ? (
-                      <Clock3 className="h-4 w-4" aria-hidden="true" />
+                      <Clock className="h-4 w-4" aria-hidden="true" />
                     ) : activeTab === "domain" ? (
                       <Globe2 className="h-4 w-4" aria-hidden="true" />
                     ) : (
