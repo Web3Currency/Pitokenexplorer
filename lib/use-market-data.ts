@@ -72,10 +72,15 @@ export function useTokenRegistry() {
 /** Secondary dataset: wait briefly so the primary market view can render first. */
 export function useLiquidityPools(enabled = true) {
   const ready = useDelayedEnable(1200, enabled)
-  return useSWR<LiquidityPool[]>(ready ? "/api/explorer/pools" : null, fetcher, {
+  const swr = useSWR<LiquidityPool[]>(ready ? "/api/explorer/pools" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: REFRESH_INTERVALS.POOLS,
   })
+
+  return {
+    ...swr,
+    isLoading: enabled && (!ready || swr.isLoading),
+  }
 }
 
 interface MarketStatsInstant {
