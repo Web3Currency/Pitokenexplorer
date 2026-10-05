@@ -29,7 +29,9 @@ export interface PoolData {
     amount: string
   }>
   total_trustlines: number
+  total_shares: string
   fee_bp: number
+  last_modified_time?: string
 }
 
 export interface TokenRegistryItem {
@@ -50,11 +52,15 @@ export interface ProcessedPool {
   price: string | null
   volume24h: null
   providers: number
+  fee: string | null
+  totalShares: string | null
+  lastActive: string | null
   allPools: Array<{
     id: string
     pair: string
     lockedToken: string
     providers: number
+    fee: string | null
   }>
 }
 
@@ -274,6 +280,9 @@ export async function getProcessedPools(): Promise<ProcessedPool[]> {
         price: price ? price.toFixed(4) : null,
         volume24h: null,
         providers: totalProviders,
+        fee: mainPool?.fee_bp != null ? `${(mainPool.fee_bp / 100).toFixed(2)}%` : null,
+        totalShares: mainPool?.total_shares ? Number.parseFloat(mainPool.total_shares).toLocaleString() : null,
+        lastActive: mainPool?.last_modified_time ? new Date(mainPool.last_modified_time).toLocaleString() : null,
         allPools: allTokenPools.map((p) => {
           const reserves = p.reserves
           let token1 = ""
@@ -299,6 +308,7 @@ export async function getProcessedPools(): Promise<ProcessedPool[]> {
             pair: `${token1}/${token2}`,
             lockedToken: lockedAmount,
             providers: p.total_trustlines || 0,
+            fee: p.fee_bp != null ? `${(p.fee_bp / 100).toFixed(2)}%` : null,
           }
         }),
       }

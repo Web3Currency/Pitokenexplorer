@@ -765,6 +765,20 @@ export function ExploreSection() {
                     </div>
                     <div className="text-sm font-semibold text-purple-600 mt-3">{pool.tvl || "—"} π TVL</div>
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-muted p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool fee</div>
+                      <div className="mt-1 text-sm font-semibold">{pool.fee || "—"}</div>
+                    </div>
+                    <div className="rounded-xl bg-muted p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool shares</div>
+                      <div className="mt-1 text-sm font-semibold truncate">{pool.totalShares || "—"}</div>
+                    </div>
+                    <div className="rounded-xl bg-muted p-3 col-span-2">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Last activity</div>
+                      <div className="mt-1 text-sm font-semibold">{pool.lastActive || "—"}</div>
+                    </div>
+                  </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">All Pools</h4>
                     <div className={cn("space-y-2", pool.allPools?.length > 5 && "max-h-[320px] overflow-y-auto pr-2")}>
