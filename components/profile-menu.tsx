@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { User, Globe, ChevronDown, Shield, BanknoteIcon } from "lucide-react"
+import { Menu, Globe, ChevronDown, Shield, BanknoteIcon } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -17,8 +17,8 @@ export function ProfileMenu() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="h-10 w-10 relative">
-          <User className="w-6 h-6" />
-          <span className="sr-only">Open profile menu</span>
+          <Menu className="w-6 h-6" />
+          <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent
@@ -26,7 +26,7 @@ export function ProfileMenu() {
         className="w-80 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 border-0"
       >
         <SheetHeader className="pb-2">
-          <SheetTitle className="text-lg font-semibold">Profile</SheetTitle>
+          <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
         </SheetHeader>
 
         <div className="mt-2 space-y-3">

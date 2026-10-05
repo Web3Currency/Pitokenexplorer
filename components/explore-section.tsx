@@ -834,7 +834,7 @@ export function ExploreSection() {
                   {paginatedPools.map((pool: any) => (
                     <div key={pool.id} className="space-y-2">
                       <button
-                        onClick={() => setExpandedPoolToken(expandedPoolToken === pool.id ? null : pool.id)}
+                        onClick={() => setExpandedPoolToken(pool.id)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         <div className="flex items-center shrink-0">
@@ -851,53 +851,6 @@ export function ExploreSection() {
                         </div>
                       </button>
 
-                      {expandedPoolToken === pool.id && (
-                        <div className="bg-muted rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                          <div className="text-center py-4 bg-muted/30 rounded-xl">
-                            <div className="text-2xl font-bold">
-                              {pool.totalLockedAsset || "—"} {pool.tokenCode}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
-                              Total {pool.tokenCode} Locked
-                            </div>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                              All Pools
-                            </h4>
-                            <div
-                              className={cn(
-                                "space-y-2",
-                                pool.allPools?.length > 5 && "max-h-[320px] overflow-y-auto pr-2",
-                              )}
-                            >
-                              {pool.allPools?.map((subPool: any) => (
-                                <div
-                                  key={subPool.id}
-                                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                                >
-                                  <div>
-                                    <div className="text-sm font-medium">{subPool.pair}</div>
-                                    <div className="text-xs text-muted-foreground">{subPool.providers} providers</div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-sm font-semibold">{subPool.lockedToken}</div>
-                                    <div className="text-xs text-muted-foreground">locked</div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => setExpandedPoolToken(null)}
-                            className="w-full flex items-center justify-center py-2 text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            <ArrowUp className="h-5 w-5" />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   ))}
 
@@ -960,6 +913,51 @@ export function ExploreSection() {
           <ArrowUp className="h-5 w-5" />
         </button>
       )}
+
+
+      <Dialog open={!!expandedPoolToken} onOpenChange={(open) => !open && setExpandedPoolToken(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          {(() => {
+            const pool = filteredPools.find((item: any) => item.id === expandedPoolToken) as any
+            if (!pool) return null
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{pool.title || `${pool.tokenCode} Pools`}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="text-center py-4 bg-muted rounded-xl">
+                    <div className="text-2xl font-bold">
+                      {pool.totalLockedAsset || "—"} {pool.tokenCode}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
+                      Total {pool.tokenCode} Locked
+                    </div>
+                    <div className="text-sm font-semibold text-purple-600 mt-3">{pool.tvl || "—"} π TVL</div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">All Pools</h4>
+                    <div className={cn("space-y-2", pool.allPools?.length > 5 && "max-h-[320px] overflow-y-auto pr-2")}>
+                      {pool.allPools?.map((subPool: any) => (
+                        <div key={subPool.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div>
+                            <div className="text-sm font-medium">{subPool.pair}</div>
+                            <div className="text-xs text-muted-foreground">{subPool.providers} providers</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold">{subPool.lockedToken}</div>
+                            <div className="text-xs text-muted-foreground">locked</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
 
       <TokenDialog
         token={selectedToken}
