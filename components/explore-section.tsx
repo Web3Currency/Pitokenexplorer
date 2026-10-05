@@ -319,7 +319,7 @@ export function ExploreSection() {
   const error = tokensError?.message || null
 
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [sortBy, setSortBy] = useState<"price" | "liquidity" | "change24h">("liquidity")
+  const [sortBy, setSortBy] = useState<"price" | "liquidity" | "change24h" | "tvl" | "name">("liquidity")
   const [activeFilters, setActiveFilters] = useState({
     liquidity: [] as string[],
     change24h: [] as string[],
@@ -403,24 +403,35 @@ export function ExploreSection() {
     })
 
     return filtered.sort((a, b) => {
-      const read = (token: any, key: "price" | "liquidity" | "change24h") => {
-        const raw = key === "change24h" ? token.change : key === "price" ? token.price : token.liquidity
+      const read = (token: any, key: "price" | "liquidity" | "change24h" | "tvl" | "name") => {
+        const raw = key === "change24h" ? token.change : key === "price" ? token.price : key === "name" ? token.symbol : token.liquidity
         return Number.parseFloat(String(raw ?? "").replace(/[^\d.-]/g, "") || "0")
       }
       return liquiditySortAsc ? read(a, sortBy) - read(b, sortBy) : read(b, sortBy) - read(a, sortBy)
     })
   }, [tokensWithPrices, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices, domains])
 
-  const filteredDomains = domains.filter((domain: Domain) =>
-    (domain.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
-  )
+  const filteredDomains = domains
+    .filter((domain: Domain) => (domain.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()))
+    .sort((a: Domain, b: Domain) => (liquiditySortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)))
 
-  const filteredPools = pools.filter(
-    (pool: any) =>
-      (pool.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (pool.tokenCode?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (pool.mainPair?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
-  )
+  const filteredPools = pools
+    .filter(
+      (pool: any) =>
+        (pool.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
+        (pool.tokenCode?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
+        (pool.mainPair?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
+    )
+    .sort((a: any, b: any) => {
+      if (sortBy === "name") {
+        const aName = String(a.tokenCode || a.title || "")
+        const bName = String(b.tokenCode || b.title || "")
+        return liquiditySortAsc ? aName.localeCompare(bName) : bName.localeCompare(aName)
+      }
+      const aTvl = Number.parseFloat(String(a.tvl ?? "0").replace(/[^\d.-]/g, "") || "0")
+      const bTvl = Number.parseFloat(String(b.tvl ?? "0").replace(/[^\d.-]/g, "") || "0")
+      return liquiditySortAsc ? aTvl - bTvl : bTvl - aTvl
+    })
 
   const tokenTotalPages = Math.ceil(filteredTokens.length / PAGE_SIZE)
   const poolTotalPages = Math.ceil(filteredPools.length / PAGE_SIZE)
@@ -508,102 +519,40 @@ export function ExploreSection() {
                 className="h-11 pl-9 bg-muted border-0 shadow-none rounded-xl"
               />
             </div>
-            {activeTab === "market" && (
-              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "h-11 shrink-0 rounded-xl bg-muted px-3 text-sm font-medium hover:bg-muted/70",
-                      (activeFilters.liquidity.length > 0 || activeFilters.change24h.length > 0 || sortBy !== "liquidity") &&
-                        "bg-primary/15 text-primary",
-                    )}
-                  >
-                    Sort
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0 shadow-xl border-0 bg-card" align="end">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-sm">Sort and filter</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Price, liquidity, and 24h change</p>
-                  </div>
-                  <div className="px-4 pb-4 space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {([
-                        ["price", "Price"],
-                        ["liquidity", "Liquidity"],
-                        ["change24h", "24h change"],
-                      ] as const).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setSortBy(key)}
-                          className={cn(
-                            "rounded-full px-3 py-1.5 text-xs bg-muted",
-                            sortBy === key && "bg-primary/15 text-primary",
-                          )}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setLiquiditySortAsc(!liquiditySortAsc)}
-                      className="text-xs font-medium text-primary"
-                    >
-                      {liquiditySortAsc ? "Low to high" : "High to low"}
-                    </button>
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Liquidity</p>
-                      {liquidityBuckets.map((bucket) => (
-                        <label key={bucket} className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={pendingFilters.liquidity.includes(bucket)}
-                            onCheckedChange={(checked) =>
-                              setPendingFilters((current) => ({
-                                ...current,
-                                liquidity: checked
-                                  ? [...current.liquidity, bucket]
-                                  : current.liquidity.filter((item) => item !== bucket),
-                              }))
-                            }
-                          />
-                          {bucket}
-                        </label>
-                      ))}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">24h change</p>
-                      {changeBuckets.map((bucket) => (
-                        <label key={bucket} className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={pendingFilters.change24h.includes(bucket)}
-                            onCheckedChange={(checked) =>
-                              setPendingFilters((current) => ({
-                                ...current,
-                                change24h: checked
-                                  ? [...current.change24h, bucket]
-                                  : current.change24h.filter((item) => item !== bucket),
-                              }))
-                            }
-                          />
-                          {bucket}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-4 grid grid-cols-2 gap-2">
-                    <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={handleResetFilters}>
-                      Reset
-                    </Button>
-                    <Button size="sm" className="rounded-lg h-9" onClick={handleApplyFilters}>
-                      Apply
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
+            <div className="flex gap-2 overflow-x-auto">
+              {(activeTab === "market"
+                ? [
+                    ["price", "Price"],
+                    ["liquidity", "Liquidity"],
+                    ["change24h", "24h"],
+                  ]
+                : activeTab === "liquidityPools"
+                  ? [
+                      ["tvl", "TVL"],
+                      ["name", "Name"],
+                    ]
+                  : [["name", "Name"]]
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    if (sortBy === key) setLiquiditySortAsc((current) => !current)
+                    else {
+                      setSortBy(key as "price" | "liquidity" | "change24h")
+                      setLiquiditySortAsc(false)
+                    }
+                  }}
+                  className={cn(
+                    "shrink-0 rounded-full bg-muted px-3 py-1.5 text-xs font-medium",
+                    sortBy === key && "bg-primary/15 text-primary",
+                  )}
+                >
+                  {label}
+                  {sortBy === key ? (liquiditySortAsc ? " ↑" : " ↓") : ""}
+                </button>
+              ))}
+            </div>
           </div>
 
           {activeTab === "market" && error ? (

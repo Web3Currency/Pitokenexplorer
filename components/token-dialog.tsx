@@ -109,37 +109,20 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
             {detailsLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mx-auto mt-2" />}
           </div>
 
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Token details</h4>
-            <div className="space-y-2">
-              {[
-                {
-                  label: "Liquidity",
-                  value: (displayToken as any)?.totalLiquidity
-                    ? `${(displayToken as any).totalLiquidity} π`
-                    : displayToken?.liquidity
-                      ? `${displayToken.liquidity} π`
-                      : "—",
-                },
-                { label: "24h volume", value: token.volume || "—" },
-                { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
-                { label: "Holders", value: String(displayToken?.holders ?? 0) },
-                { label: "Trustlines", value: String(displayToken?.trustlines ?? 0) },
-                { label: "ATH", value: athPrice ? `${athPrice} π` : "—" },
-                { label: "ATL", value: atlPrice ? `${atlPrice} π` : "—" },
-                ...((displayToken as any)?.totalSupply
-                  ? [{ label: "Total supply", value: (displayToken as any).totalSupply }]
-                  : []),
-                ...((displayToken as any)?.marketCap
-                  ? [{ label: "Market cap", value: `${(displayToken as any).marketCap} π` }]
-                  : []),
-              ].map((stat) => (
-                <div key={stat.label} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
-                  <div className="text-sm font-semibold text-right">{stat.value}</div>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "24h volume", value: token.volume || "—" },
+              { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
+              { label: "Holders", value: String(displayToken?.holders ?? 0) },
+              { label: "Trustlines", value: String(displayToken?.trustlines ?? 0) },
+              { label: "All-time high", value: athPrice ? `${athPrice} π` : "—" },
+              { label: "All-time low", value: atlPrice ? `${atlPrice} π` : "—" },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-xl bg-muted p-3">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
+                <div className="mt-1 text-sm font-semibold truncate">{stat.value}</div>
+              </div>
+            ))}
           </div>
         </div>
       </DialogContent>
