@@ -536,23 +536,6 @@ export function ExploreSection() {
                   : [["name", "Name"]]
               ).map(([key, label]) => {
                 const isActive = sortBy === key
-                const SortDirection = isActive ? (liquiditySortAsc ? ArrowUp : ArrowDown) : ArrowUpDown
-                const Icon =
-                  activeTab === "market" && key === "price"
-                    ? Globe2
-                    : activeTab === "market" && key === "liquidity"
-                      ? Droplets
-                      : activeTab === "market" && key === "change24h"
-                        ? Clock3
-                        : activeTab === "domain"
-                          ? Globe2
-                          : SortDirection
-
-                const icon = activeTab === "market" && key === "price" ? (
-                  <span className="text-base font-semibold leading-none" aria-hidden="true">π</span>
-                ) : (
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                )
 
                 return (
                   <button
@@ -568,20 +551,30 @@ export function ExploreSection() {
                       }
                     }}
                     className={cn(
-                      "shrink-0 inline-flex h-8 w-8 items-center justify-center bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground",
+                      "shrink-0 inline-flex h-8 min-w-8 items-center justify-center gap-0.5 bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground",
                       isActive && "text-primary",
                     )}
                   >
-                    {icon}
+                    {activeTab === "market" && key === "price" ? (
+                      <span className="text-base font-semibold leading-none" aria-hidden="true">π</span>
+                    ) : activeTab === "market" && key === "liquidity" ? (
+                      <Droplets className="h-4 w-4" aria-hidden="true" />
+                    ) : activeTab === "market" && key === "change24h" ? (
+                      <Clock3 className="h-4 w-4" aria-hidden="true" />
+                    ) : activeTab === "domain" ? (
+                      <Globe2 className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4" aria-hidden="true" />
+                    )}
                     {isActive && (
-                      <>
-                        {liquiditySortAsc ? (
-                          <ArrowUp className="h-3 w-3" aria-hidden="true" />
-                        ) : (
-                          <ArrowDown className="h-3 w-3" aria-hidden="true" />
-                        )}
-                        <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
-                      </>
+                      liquiditySortAsc ? (
+                        <ArrowUp className="h-3 w-3" aria-hidden="true" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3" aria-hidden="true" />
+                      )
+                    )}
+                    {isActive && (
+                      <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
                     )}
                   </button>
                 )
