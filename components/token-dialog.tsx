@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { X, Sparkles, Loader2, Info, ExternalLink, Star, Globe } from "lucide-react"
-import { Card } from "@/components/ui/card"
+import { X, Sparkles, Loader2, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Token } from "@/lib/mock-data"
 import { useTokenDetails, useTokenPriceHistory, useDomains } from "@/lib/use-market-data"
@@ -19,8 +18,6 @@ interface TokenDialogProps {
 
 export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
-  const [showAboutCard, setShowAboutCard] = useState(false)
-
   const fullIssuer = (token as any)?.fullIssuer || null
   const assetCode = token?.symbol || null
 
@@ -143,118 +140,6 @@ export function TokenDialog({ token, open, onOpenChange }: TokenDialogProps) {
               )}
             </div>
           </div>
-
-          {/* Action buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              className="gap-2"
-              onClick={() => {
-                if ((displayToken as any)?.tradeUrl) {
-                  window.open((displayToken as any).tradeUrl, "_blank")
-                }
-              }}
-              disabled={!(displayToken as any)?.tradeUrl}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Trade on Pi DEX
-            </Button>
-
-            <Button variant="outline" className="gap-2">
-              <Star className="h-4 w-4" />
-              Watchlist
-            </Button>
-
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => {
-                if ((displayToken as any)?.appUrl) {
-                  window.open((displayToken as any).appUrl, "_blank")
-                }
-              }}
-              disabled={!(displayToken as any)?.appUrl}
-            >
-              <Globe className="h-4 w-4" />
-              App
-            </Button>
-
-            <Button variant="outline" className="gap-2" onClick={() => setShowAboutCard(!showAboutCard)}>
-              <Info className="h-4 w-4" />
-              About
-            </Button>
-          </div>
-
-          {/* About card */}
-          {showAboutCard && (displayToken as any)?.description && (
-            <Card className="p-4 border-border">
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <h4 className="font-semibold text-sm">About {token.symbol}</h4>
-                <button
-                  onClick={() => setShowAboutCard(false)}
-                  className="text-muted-foreground hover:text-foreground shrink-0"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {((displayToken as any)?.website || (displayToken as any)?.twitter || (displayToken as any)?.telegram) && (
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
-                  {(displayToken as any)?.website && (
-                    <button
-                      onClick={() => window.open((displayToken as any).website, "_blank")}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-full px-3 py-1.5 transition-colors"
-                      aria-label="Website"
-                    >
-                      <Globe className="h-3.5 w-3.5" />
-                      Website
-                    </button>
-                  )}
-                  {(displayToken as any)?.twitter && (
-                    <button
-                      onClick={() =>
-                        window.open(
-                          (displayToken as any).twitter.startsWith("@")
-                            ? `https://twitter.com/${(displayToken as any).twitter.slice(1)}`
-                            : (displayToken as any).twitter.startsWith("http")
-                              ? (displayToken as any).twitter
-                              : `https://twitter.com/${(displayToken as any).twitter}`,
-                          "_blank",
-                        )
-                      }
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-full px-3 py-1.5 transition-colors"
-                      aria-label="Twitter"
-                    >
-                      <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                      </svg>
-                      Twitter
-                    </button>
-                  )}
-                  {(displayToken as any)?.telegram && (
-                    <button
-                      onClick={() =>
-                        window.open(
-                          (displayToken as any).telegram.startsWith("http")
-                            ? (displayToken as any).telegram
-                            : `https://t.me/${(displayToken as any).telegram.replace("t.me/", "")}`,
-                          "_blank",
-                        )
-                      }
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-full px-3 py-1.5 transition-colors"
-                      aria-label="Telegram"
-                    >
-                      <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
-                      </svg>
-                      Telegram
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <p className="text-sm text-muted-foreground leading-relaxed">{(displayToken as any).description}</p>
-            </Card>
-          )}
 
           {showAIAnalysis && (
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
