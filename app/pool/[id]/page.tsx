@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Header } from "@/components/header"
 import { useLiquidityPools } from "@/lib/use-market-data"
+import { PoolDetailsSkeleton } from "@/components/pool-details-skeleton"
 
 export default function PoolPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -19,8 +20,8 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           <ArrowLeft className="h-4 w-4" />
           Liquidity pools
         </Link>
-        {!pool ? (
-          <p className="mt-6 text-sm text-muted-foreground">{isLoading ? "Loading pool..." : "Pool not found."}</p>
+        {isLoading && !pool ? (\n          <div className="mt-4">\n            <PoolDetailsSkeleton />\n          </div>\n        ) : !pool ? (
+          <p className="mt-6 text-sm text-muted-foreground">Pool not found.</p>
         ) : (
           <div className="mt-4 space-y-4 pb-10">
             <div className="rounded-xl bg-muted px-4 py-5 text-center">
