@@ -93,7 +93,6 @@ interface MarketStatsDeferred {
   volume24hChange: string | null
   tokenCountChange: string | null
   newTokens7d?: number
-  verifiedTokensCount?: number
 }
 
 interface CombinedMarketStats extends MarketStatsInstant {
@@ -101,7 +100,6 @@ interface CombinedMarketStats extends MarketStatsInstant {
   volume24hChange?: string | null
   tokenCountChange?: string | null
   newTokens7d?: number
-  verifiedTokensCount?: number
 }
 
 export function useMarketStatsInstant() {
@@ -130,7 +128,6 @@ export function useMarketStats() {
         volume24hChange: deferred?.volume24hChange ?? null,
         tokenCountChange: deferred?.tokenCountChange ?? null,
         newTokens7d: deferred?.newTokens7d ?? undefined,
-        verifiedTokensCount: deferred?.verifiedTokensCount ?? undefined,
       }
     : undefined
 

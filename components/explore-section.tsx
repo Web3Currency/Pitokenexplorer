@@ -231,21 +231,6 @@ function UnifiedStatsCard({
                   )}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  Verified Tokens
-                  <MobileTooltip content="Tokens meeting all verification criteria: trustline holders, valid accounts, active liquidity, circulating supply, and linked domain">
-                    <Info className="h-3 w-3 cursor-help" />
-                  </MobileTooltip>
-                </span>
-                <span className="font-semibold">
-                  {isDeferredLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin inline" />
-                  ) : (
-                    ((stats as any).verifiedTokensCount ?? 0)
-                  )}
-                </span>
-              </div>
             </div>
           </div>
         </DialogContent>

@@ -73,7 +73,6 @@ export interface MarketStatsDeferred {
   volume24hChange: string | null
   tokenCountChange: string | null
   newTokens7d: number
-  verifiedTokensCount: number
 }
 
 export interface MarketStatsData extends MarketStatsInstant {
@@ -349,7 +348,6 @@ export async function getMarketStats(): Promise<MarketStatsData> {
   const liquidityChange = await calculateLiquidity24hChange(pools)
   const volume24hChange = await calculateVolume24hChange(pools)
   const newTokens7d = await calculateNewTokens7d(pools)
-  const verifiedTokensCount = await calculateVerifiedTokensCount(pools)
 
   const stats: MarketStatsData = {
     ...instant,
@@ -369,7 +367,6 @@ export async function getMarketStats(): Promise<MarketStatsData> {
       volume24hChange,
       tokenCountChange: null,
       newTokens7d,
-      verifiedTokensCount,
     },
     CACHE_TTL.MARKET_STATS,
   )
@@ -471,14 +468,12 @@ export async function getMarketStatsDeferred(): Promise<MarketStatsDeferred> {
   const volume24hChange = await calculateVolume24hChange(pools)
 
   const newTokens7d = await calculateNewTokens7d(pools)
-  const verifiedTokensCount = await calculateVerifiedTokensCount(pools)
 
   const deferred: MarketStatsDeferred = {
     liquidityChange,
     volume24hChange,
     tokenCountChange: null,
     newTokens7d,
-    verifiedTokensCount,
   }
 
   setCache(deferredCacheKey, deferred, CACHE_TTL.MARKET_STATS)
@@ -1316,55 +1311,54 @@ async function calculateLiquidity24hChange(pools: PoolData[]): Promise<string | 
     const now = Date.now()
     const hours24Ago = now - 24 * 60 * 60 * 1000
 
-    // Get snapshots of liquidity at start and end of 24h window
-    const liquidityStart = 0
-    let liquidityEnd = 0
-
-    // Sample liquidity from operations to estimate change
-    // Use the existing pool data to calculate current total
     let currentTotalLiquidity = 0
     pools.forEach((pool) => {
       const nativeReserve = pool.reserves.find((r) => r.asset === "native")
-      if (nativeReserve) {
-        currentTotalLiquidity += Number.parseFloat(nativeReserve.amount)
-      }
+      if (nativeReserve) currentTotalLiquidity += Number.parseFloat(nativeReserve.amount)
+    })
+    if (currentTotalLiquidity <= 0) return null
+
+    // Deposits and withdrawals are on pool effects, not manage_liquidity_pool operations.
+    const ranked = [...pools].sort((a, b) => {
+      const aPi = Number.parseFloat(a.reserves.find((r) => r.asset === "native")?.amount || "0")
+      const bPi = Number.parseFloat(b.reserves.find((r) => r.asset === "native")?.amount || "0")
+      return bPi - aPi
     })
 
-    liquidityEnd = currentTotalLiquidity
+    let netPiFlow = 0
+    let sawEffect = false
 
-    // For the starting point, we estimate based on operation volumes over the period
-    // Fetch a sample of recent operations to calculate approximate liquidity change
-    let netFlowOver24h = 0
-
-    // Fetch pool operations for all pools to estimate net liquidity change
-    const operationSamples: any[] = []
-    let sampleLimit = 0
-
-    for (const pool of pools.slice(0, Math.min(10, pools.length))) {
-      // Sample first 10 largest pools to estimate market change
-      if (sampleLimit >= 200) break // Limit total operations sampled
-
-      let nextUrl: string | null = `${PI_HORIZON_URL}/liquidity_pools/${pool.id}/operations?limit=50&order=desc`
+    for (const pool of ranked.slice(0, 15)) {
+      let nextUrl: string | null = `${PI_HORIZON_URL}/liquidity_pools/${pool.id}/effects?limit=200&order=desc`
       let pageCount = 0
 
-      while (nextUrl && pageCount < 2 && sampleLimit < 200) {
+      while (nextUrl && pageCount < 2) {
         try {
           const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
           if (!response.ok) break
-
           const data: any = await response.json()
           const records = data._embedded?.records ?? []
           if (records.length === 0) break
 
-          records.forEach((op: any) => {
-            const opTime = new Date(op.created_at).getTime()
-            if (opTime >= hours24Ago) {
-              operationSamples.push(op)
-              sampleLimit++
+          let reachedOlder = false
+          for (const effect of records) {
+            const effectTime = new Date(effect.created_at).getTime()
+            if (Number.isNaN(effectTime) || effectTime < hours24Ago) {
+              reachedOlder = true
+              continue
             }
-          })
+            const reserves = effect.reserves_deposited || effect.reserves_received || effect.reserves_max || []
+            const native = Array.isArray(reserves)
+              ? reserves.find((reserve: any) => reserve.asset === "native")
+              : null
+            const amount = native ? Number.parseFloat(native.amount) : 0
+            if (!amount) continue
+            sawEffect = true
+            if (effect.type === "liquidity_pool_deposited") netPiFlow += amount
+            if (effect.type === "liquidity_pool_withdrew") netPiFlow -= amount
+          }
 
-          if (records.length < 50) break
+          if (reachedOlder || records.length < 200) break
           nextUrl = data._links?.next?.href || null
           pageCount++
         } catch {
@@ -1373,42 +1367,20 @@ async function calculateLiquidity24hChange(pools: PoolData[]): Promise<string | 
       }
     }
 
-    // Analyze operations to estimate liquidity flow
-    // Positive flow = deposits (increase liquidity)
-    // Negative flow = withdrawals (decrease liquidity)
-    operationSamples.forEach((op: any) => {
-      if (op.type === "manage_liquidity_pool") {
-        if (op.started) {
-          // Liquidity added
-          netFlowOver24h += 1 // Simplified: count as positive impact
-        } else {
-          // Liquidity removed
-          netFlowOver24h -= 1
-        }
-      }
-    })
+    if (!sawEffect) return "0.00%"
 
-    // Estimate starting liquidity from current minus net flow indication
-    // For better accuracy, we'd need historical snapshots, but using conservative estimate
-    const estimatedChangePercent =
-      operationSamples.length > 0 ? (netFlowOver24h / Math.max(operationSamples.length, 1)) * 10 : 0
+    const liquidityStart = currentTotalLiquidity - netPiFlow
+    if (liquidityStart <= 0) return netPiFlow > 0 ? "+100.00%" : "0.00%"
 
-    if (Math.abs(estimatedChangePercent) < 0.1) {
-      return "0.00%" // No significant change
-    }
-
-    const changeFormatted = estimatedChangePercent.toFixed(2)
-    return estimatedChangePercent >= 0 ? `+${changeFormatted}%` : `${changeFormatted}%`
+    const changePercent = (netPiFlow / liquidityStart) * 100
+    const changeFormatted = changePercent.toFixed(2)
+    return changePercent >= 0 ? `+${changeFormatted}%` : `${changeFormatted}%`
   } catch (error) {
     console.error("Error calculating 24h liquidity change:", error)
     return null
   }
 }
 
-/**
- * Calculate 24h volume snapshots from pool operations
- * Bins operations into 24h window to calculate change
- */
 async function calculateVolume24hChange(pools: PoolData[]): Promise<string | null> {
   try {
     const now = Date.now()
