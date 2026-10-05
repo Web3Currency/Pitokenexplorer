@@ -319,29 +319,13 @@ export function ExploreSection() {
   const error = tokensError?.message || null
 
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [sortBy, setSortBy] = useState<"price" | "liquidity" | "change24h">("liquidity")
   const [activeFilters, setActiveFilters] = useState({
-    category: [] as string[],
-    verified: [] as string[],
     liquidity: [] as string[],
     change24h: [] as string[],
   })
   const [pendingFilters, setPendingFilters] = useState(activeFilters)
 
-  const categories = [
-    "Commerce",
-    "Game",
-    "NFT",
-    "Social",
-    "Education",
-    "Health",
-    "Travel",
-    "Utilities",
-    "Career",
-    "Entertainment",
-    "Finance",
-    "Lifestyle",
-  ]
-  const verifiedOptions = ["Verified", "Not Verified"]
   const liquidityBuckets = ["<1,000 PI", "1,000–10,000 PI", "10,000–100,000 PI", ">100,000 PI"]
   const changeBuckets = ["≤-50%", "-10% to -50%", "0% to -10%", "0% to +10%", "+10% to +50%", "≥+50%"]
 
@@ -371,11 +355,11 @@ export function ExploreSection() {
 
   const handleResetFilters = () => {
     const reset = {
-      category: [],
-      verified: [],
       liquidity: [],
       change24h: [],
     }
+    setSortBy("liquidity")
+    setLiquiditySortAsc(false)
     setPendingFilters(reset)
     setActiveFilters(reset)
     setIsFilterOpen(false)
@@ -388,19 +372,6 @@ export function ExploreSection() {
         (token.symbol?.toLowerCase() ?? "").includes(searchQuery.toLowerCase())
 
       if (!matchesSearch) return false
-
-      if (activeFilters.category.length > 0) {
-        if (!activeFilters.category.includes((token as any).category)) return false
-      }
-
-      // ENFORCE: Verification filter reads ONLY from admin verified flag
-      if (activeFilters.verified?.length > 0) {
-        const tokenIsVerified = token.verified === true
-        const matchesVerified = activeFilters.verified.some(
-          (v) => (v === "Verified" && tokenIsVerified) || (v === "Not Verified" && !tokenIsVerified),
-        )
-        if (!matchesVerified) return false
-      }
 
       if (activeFilters.liquidity.length > 0) {
         const liq = Number.parseFloat(token.liquidity?.replace(/[^\d.-]/g, "") || "0")
@@ -432,19 +403,13 @@ export function ExploreSection() {
     })
 
     return filtered.sort((a, b) => {
-      const aLiq = Number.parseFloat(a.liquidity?.replace(/[^\d.-]/g, "") || "0")
-      const bLiq = Number.parseFloat(b.liquidity?.replace(/[^\d.-]/g, "") || "0")
-
-      const aHasLiquidity = a.liquidity && aLiq > 0
-      const bHasLiquidity = b.liquidity && bLiq > 0
-
-      if (aHasLiquidity && !bHasLiquidity) return -1
-      if (!aHasLiquidity && bHasLiquidity) return 1
-      if (!aHasLiquidity && !bHasLiquidity) return 0
-
-      return liquiditySortAsc ? aLiq - bLiq : bLiq - aLiq
+      const read = (token: any, key: "price" | "liquidity" | "change24h") => {
+        const raw = key === "change24h" ? token.change : key === "price" ? token.price : token.liquidity
+        return Number.parseFloat(String(raw ?? "").replace(/[^\d.-]/g, "") || "0")
+      }
+      return liquiditySortAsc ? read(a, sortBy) - read(b, sortBy) : read(b, sortBy) - read(a, sortBy)
     })
-  }, [tokensWithPrices, searchQuery, activeFilters, liquiditySortAsc, tokenPrices, domains])
+  }, [tokensWithPrices, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices, domains])
 
   const filteredDomains = domains.filter((domain: Domain) =>
     (domain.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
@@ -528,186 +493,6 @@ export function ExploreSection() {
           </div>
 
           <div className="flex items-center gap-2">
-            {activeTab === "market" && (
-              <>
-                <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      className={cn(
-                        "p-2 bg-muted rounded-lg hover:bg-muted/70 transition-colors shrink-0 relative",
-                        (activeFilters.category.length > 0 ||
-                          activeFilters.verified?.length > 0 ||
-                          activeFilters.liquidity.length > 0 ||
-                          activeFilters.change24h.length > 0) &&
-                          "bg-primary/15 text-primary",
-                      )}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {(activeFilters.category.length > 0 ||
-                        activeFilters.verified?.length > 0 ||
-                        activeFilters.liquidity.length > 0 ||
-                        activeFilters.change24h.length > 0) && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-                      )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0 shadow-xl border-0 bg-card" align="start">
-                    <div className="p-4 border-b border-border flex items-center justify-between">
-                      <h3 className="font-semibold text-sm">Filters</h3>
-                      <button onClick={() => setIsFilterOpen(false)}>
-                        <X className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                    <ScrollArea className="h-[350px]">
-                      <Accordion type="multiple" className="px-4">
-                        <AccordionItem value="category" className="border-none">
-                          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-muted-foreground py-3 hover:no-underline">
-                            Category
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-2 pb-4">
-                            {categories.map((cat) => (
-                              <div key={cat} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`cat-${cat}`}
-                                  checked={pendingFilters.category.includes(cat)}
-                                  onCheckedChange={(checked) => {
-                                    setPendingFilters((prev) => ({
-                                      ...prev,
-                                      category: checked
-                                        ? [...prev.category, cat]
-                                        : prev.category.filter((c) => c !== cat),
-                                    }))
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`cat-${cat}`}
-                                  className="text-sm font-medium leading-none cursor-pointer"
-                                >
-                                  {cat}
-                                </label>
-                              </div>
-                            ))}
-                          </AccordionContent>
-                        </AccordionItem>
-
-                        <AccordionItem value="verified" className="border-none">
-                          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-muted-foreground py-3 hover:no-underline">
-                            Verified Status
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-2 pb-4">
-                            {verifiedOptions.map((v) => (
-                              <div key={v} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`ver-${v}`}
-                                  checked={pendingFilters.verified?.includes(v)}
-                                  onCheckedChange={(checked) => {
-                                    setPendingFilters((prev) => ({
-                                      ...prev,
-                                      verified: checked
-                                        ? [...(prev.verified || []), v]
-                                        : (prev.verified || []).filter((i) => i !== v),
-                                    }))
-                                  }}
-                                />
-                                <label htmlFor={`ver-${v}`} className="text-sm font-medium leading-none cursor-pointer">
-                                  {v}
-                                </label>
-                              </div>
-                            ))}
-                          </AccordionContent>
-                        </AccordionItem>
-
-                        <AccordionItem value="liquidity" className="border-none">
-                          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-muted-foreground py-3 hover:no-underline">
-                            Liquidity
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-2 pb-4">
-                            {liquidityBuckets.map((bucket) => (
-                              <div key={bucket} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`liq-${bucket}`}
-                                  checked={pendingFilters.liquidity.includes(bucket)}
-                                  onCheckedChange={(checked) => {
-                                    setPendingFilters((prev) => ({
-                                      ...prev,
-                                      liquidity: checked
-                                        ? [...prev.liquidity, bucket]
-                                        : prev.liquidity.filter((b) => b !== bucket),
-                                    }))
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`liq-${bucket}`}
-                                  className="text-sm font-medium leading-none cursor-pointer"
-                                >
-                                  {bucket}
-                                </label>
-                              </div>
-                            ))}
-                          </AccordionContent>
-                        </AccordionItem>
-
-                        <AccordionItem value="change" className="border-none">
-                          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-muted-foreground py-3 hover:no-underline">
-                            24h Change
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-2 pb-4">
-                            {changeBuckets.map((bucket) => (
-                              <div key={bucket} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`change-${bucket}`}
-                                  checked={pendingFilters.change24h.includes(bucket)}
-                                  onCheckedChange={(checked) => {
-                                    setPendingFilters((prev) => ({
-                                      ...prev,
-                                      change24h: checked
-                                        ? [...prev.change24h, bucket]
-                                        : prev.change24h.filter((b) => b !== bucket),
-                                    }))
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`change-${bucket}`}
-                                  className="text-sm font-medium leading-none cursor-pointer"
-                                >
-                                  {bucket}
-                                </label>
-                              </div>
-                            ))}
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    </ScrollArea>
-                    <div className="p-4 border-t border-border grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg h-9 bg-transparent"
-                        onClick={handleResetFilters}
-                      >
-                        Reset
-                      </Button>
-                      <Button size="sm" className="rounded-lg h-9" onClick={handleApplyFilters}>
-                        Apply
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <button
-                  onClick={() => setLiquiditySortAsc(!liquiditySortAsc)}
-                  className={cn(
-                    "p-2 bg-muted rounded-lg hover:bg-muted/70 transition-colors shrink-0 flex items-center gap-1.5",
-                    "bg-primary/15 text-primary",
-                  )}
-                  title={liquiditySortAsc ? "Sorted: Lowest liquidity first" : "Sorted: Highest liquidity first"}
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                  <span className="text-xs font-medium hidden sm:inline">
-                    {liquiditySortAsc ? "Low→High" : "High→Low"}
-                  </span>
-                </button>
-              </>
-            )}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -720,9 +505,105 @@ export function ExploreSection() {
                       ? "Search pools..."
                       : "Search tokens..."
                 }
-                className="pl-9 bg-muted border-0 shadow-none"
+                className="h-11 pl-9 bg-muted border-0 shadow-none rounded-xl"
               />
             </div>
+            {activeTab === "market" && (
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-11 shrink-0 rounded-xl bg-muted px-3 text-sm font-medium hover:bg-muted/70",
+                      (activeFilters.liquidity.length > 0 || activeFilters.change24h.length > 0 || sortBy !== "liquidity") &&
+                        "bg-primary/15 text-primary",
+                    )}
+                  >
+                    Sort
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0 shadow-xl border-0 bg-card" align="end">
+                  <div className="p-4">
+                    <h3 className="font-semibold text-sm">Sort and filter</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Price, liquidity, and 24h change</p>
+                  </div>
+                  <div className="px-4 pb-4 space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        ["price", "Price"],
+                        ["liquidity", "Liquidity"],
+                        ["change24h", "24h change"],
+                      ] as const).map(([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSortBy(key)}
+                          className={cn(
+                            "rounded-full px-3 py-1.5 text-xs bg-muted",
+                            sortBy === key && "bg-primary/15 text-primary",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLiquiditySortAsc(!liquiditySortAsc)}
+                      className="text-xs font-medium text-primary"
+                    >
+                      {liquiditySortAsc ? "Low to high" : "High to low"}
+                    </button>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Liquidity</p>
+                      {liquidityBuckets.map((bucket) => (
+                        <label key={bucket} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={pendingFilters.liquidity.includes(bucket)}
+                            onCheckedChange={(checked) =>
+                              setPendingFilters((current) => ({
+                                ...current,
+                                liquidity: checked
+                                  ? [...current.liquidity, bucket]
+                                  : current.liquidity.filter((item) => item !== bucket),
+                              }))
+                            }
+                          />
+                          {bucket}
+                        </label>
+                      ))}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">24h change</p>
+                      {changeBuckets.map((bucket) => (
+                        <label key={bucket} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={pendingFilters.change24h.includes(bucket)}
+                            onCheckedChange={(checked) =>
+                              setPendingFilters((current) => ({
+                                ...current,
+                                change24h: checked
+                                  ? [...current.change24h, bucket]
+                                  : current.change24h.filter((item) => item !== bucket),
+                              }))
+                            }
+                          />
+                          {bucket}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-4 grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={handleResetFilters}>
+                      Reset
+                    </Button>
+                    <Button size="sm" className="rounded-lg h-9" onClick={handleApplyFilters}>
+                      Apply
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
 
           {activeTab === "market" && error ? (
