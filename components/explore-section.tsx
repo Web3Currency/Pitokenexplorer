@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowDown,
+  ChevronUp,
   Droplets,
   Clock,
   Globe2,
@@ -231,6 +232,23 @@ function TokenListSkeleton({ rows = 6 }: { rows?: number }) {
         </div>
       ))}
     </div>
+  )
+}
+
+function BackToTopControl({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Back to top"
+      title="Back to top"
+      className="absolute left-1/2 top-1/2 z-10 flex h-9 w-10 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <span className="flex -mb-1 animate-pulse">
+        <ChevronUp className="h-4 w-4 -mb-2" />
+        <ChevronUp className="h-4 w-4" />
+      </span>
+    </button>
   )
 }
 
@@ -630,7 +648,7 @@ export function ExploreSection() {
                   })}
 
                   {filteredTokens.length > PAGE_SIZE && (
-                    <div className="flex items-center justify-between pt-4 pb-2">
+                    <div className="relative flex items-center justify-between pt-4 pb-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -651,6 +669,7 @@ export function ExploreSection() {
                         Next
                         <ChevronRight className="h-4 w-4" />
                       </Button>
+                      {showBackToTop && <BackToTopControl onClick={scrollToTop} />}
                     </div>
                   )}
                 </div>
@@ -714,6 +733,7 @@ export function ExploreSection() {
                         Next
                         <ChevronRight className="h-4 w-4" />
                       </Button>
+                      {showBackToTop && <BackToTopControl onClick={scrollToTop} />}
                     </div>
                   )}
                 </div>
@@ -724,16 +744,7 @@ export function ExploreSection() {
         </div>
       </div>
 
-      {showBackToTop && (activeTab === "market" || activeTab === "liquidityPools" || activeTab === "domain") && (
-        <button
-          type="button"
-          onClick={scrollToTop}
-          aria-label="Back to top"
-          className="fixed bottom-5 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </button>
-      )}
+
 
 
 
