@@ -639,9 +639,7 @@ export function ExploreSection() {
                               <ArrowUp className="h-3.5 w-3.5 text-green-500" />
                             ) : rankMovement === "down" ? (
                               <ArrowDown className="h-3.5 w-3.5 text-red-500" />
-                            ) : (
-                              
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </button>
