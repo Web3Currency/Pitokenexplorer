@@ -649,6 +649,80 @@ export async function getTokenRegistry(): Promise<any[]> {
  * - Total liquidity summed across all Token/PI pools
  * - Trustlines and Holders properly distinguished
  */
+async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string): Promise<{
+  trustlines: number
+  holders: number
+  circulatingSupply: string | null
+  circulatingSupplyRaw: number | null
+  poolBalance: string | null
+}> {
+  const empty = {
+    trustlines: 0,
+    holders: 0,
+    circulatingSupply: null,
+    circulatingSupplyRaw: null,
+    poolBalance: null,
+  }
+
+  try {
+    const assetParam = `${assetCode}:${assetIssuer}`
+    const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
+    const assetResponse: any = await fetch(assetUrl, { next: { revalidate: 300 } })
+    if (!assetResponse.ok) return empty
+
+    const assetData: any = await assetResponse.json()
+    const asset = assetData._embedded?.records?.[0]
+    if (!asset) return empty
+
+    const circulatingSupplyRaw = Number.parseFloat(String(asset.amount ?? ""))
+    const circulatingSupply = Number.isFinite(circulatingSupplyRaw)
+      ? circulatingSupplyRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : null
+
+    let trustlines = 0
+    let holders = 0
+    let nextUrl: string | null =
+      `${PI_HORIZON_URL}/accounts?asset=${encodeURIComponent(assetParam)}&limit=${PAGINATION_LIMITS.ACCOUNTS_PER_PAGE}`
+    let pageCount = 0
+
+    while (nextUrl && pageCount < PAGINATION_LIMITS.ACCOUNTS_MAX_PAGES) {
+      const accountResponse: any = await fetch(nextUrl, { next: { revalidate: 300 } })
+      if (!accountResponse.ok) break
+
+      const accountData: any = await accountResponse.json()
+      const records = accountData._embedded?.records || []
+      if (records.length === 0) break
+
+      for (const account of records) {
+        const balance = account.balances?.find(
+          (b: any) => b.asset_code === assetCode && b.asset_issuer === assetIssuer,
+        )
+        if (!balance) continue
+
+        trustlines += 1
+        if (Number.parseFloat(balance.balance) > 0) holders += 1
+      }
+
+      if (records.length < PAGINATION_LIMITS.ACCOUNTS_PER_PAGE) break
+      nextUrl = accountData._links?.next?.href || null
+      pageCount += 1
+    }
+
+    return {
+      trustlines,
+      holders,
+      circulatingSupply,
+      circulatingSupplyRaw: Number.isFinite(circulatingSupplyRaw) ? circulatingSupplyRaw : null,
+      poolBalance: Number.isFinite(Number.parseFloat(String(asset.liquidity_pools_amount ?? "")))
+        ? Number.parseFloat(String(asset.liquidity_pools_amount)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+        : null,
+    }
+  } catch (error) {
+    console.error("Error fetching token asset/account data:", error)
+    return empty
+  }
+}
+
 export async function getTokenDetails(assetCode: string, assetIssuer: string): Promise<TokenDetailsData> {
   const cacheKey = CACHE_KEYS.TOKEN_DETAILS(assetCode, assetIssuer)
   const cached = getCache<TokenDetailsData>(cacheKey)
