@@ -46,7 +46,7 @@ function UnifiedStatsCard({
   const [showTokenCountDetails, setShowTokenCountDetails] = useState(false)
 
   const formatValue = (value: string | number | undefined | null) => {
-    if (value === undefined || value === null) return "—"
+    if (value === undefined || value === null) return ""
     const strVal = String(value).replace(/[^\d.-]/g, "")
     const num = Number.parseFloat(strVal)
     if (isNaN(num)) return value
@@ -66,7 +66,7 @@ function UnifiedStatsCard({
     return "text-muted-foreground"
   }
 
-  if (!stats) {
+  if (!stats || isDeferredLoading) {
     return (
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border">
@@ -150,7 +150,7 @@ function UnifiedStatsCard({
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-muted rounded-xl p-4">
-              <div className="text-3xl font-bold text-center">{stats.liquidity || "—"}</div>
+              <div className="text-3xl font-bold text-center">{stats.liquidity || null}</div>
               <div className="text-sm text-muted-foreground text-center mt-1">Total Network Liquidity</div>
             </div>
             <div className="space-y-3 text-sm"><div className="flex justify-between">
@@ -181,11 +181,11 @@ function UnifiedStatsCard({
               <div className="border-t border-border pt-3 mt-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Liquidity Pools</span>
-                  <span className="font-semibold">{stats.poolCount || "—"}</span>
+                  <span className="font-semibold">{stats.poolCount || null}</span>
                 </div>
                 <div className="flex justify-between mt-2">
                   <span className="text-muted-foreground">Largest Pool</span>
-                  <span className="font-semibold text-amber-500">{stats.largestPool || "—"}</span>
+                  <span className="font-semibold text-amber-500">{stats.largestPool || null}</span>
                 </div>
               </div>
             </div>
@@ -203,7 +203,7 @@ function UnifiedStatsCard({
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-muted rounded-xl p-4">
-              <div className="text-3xl font-bold text-center">{stats.tokenCount?.toLocaleString() ?? "—"}</div>
+              <div className="text-3xl font-bold text-center">{stats.tokenCount?.toLocaleString() ?? null}</div>
               <div className="text-sm text-muted-foreground text-center mt-1">Live Tokens Listed</div>
             </div>
             <div className="space-y-3 text-sm">
@@ -703,7 +703,7 @@ export function ExploreSection() {
                           <div className="text-sm font-medium">{pool.title || `${pool.tokenCode} Pools`}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-purple-600">{pool.tvl || "—"}</div>
+                          <div className="text-sm font-semibold text-purple-600">{pool.tvl || null}</div>
                           <div className="text-[10px] text-muted-foreground">TVL (PI)</div>
                         </div>
                       </button>
