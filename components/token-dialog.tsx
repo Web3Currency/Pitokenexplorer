@@ -16,97 +16,22 @@ function TokenDetailsSkeleton() {
           <div className="space-y-2 text-right"><div className="ml-auto h-3 w-20 animate-pulse rounded bg-background/50" /><div className="ml-auto h-7 w-28 animate-pulse rounded bg-background/70" /></div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div>
-      <div className="h-16 animate-pulse rounded-xl bg-muted" />
-      <div className="space-y-3"><div className="h-4 w-24 animate-pulse rounded bg-muted" /><div className="grid grid-cols-3 gap-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div><div className="grid grid-cols-2 gap-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="space-y-2"><div className="h-3 w-10 animate-pulse rounded bg-muted" />{Array.from({ length: 3 }).map((_, j) => <div key={j} className="h-9 animate-pulse rounded-lg bg-muted" />)}</div>)}</div></div>
-    </div>
-  )
-}
-
-export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; issuer: string }) {
-  const [copied, setCopied] = useState(false)
-  const token = {
-    symbol: assetCode,
-    issuer,
-    fullIssuer: issuer,
-    price: null,
-    volume: null,
-    verified: false,
-  } as unknown as Token
-
-  const { data: tokenDetails, isLoading: detailsLoading } = useTokenDetails(assetCode, issuer)
-  const { data: priceHistory } = useTokenPriceHistory(assetCode, issuer)
-  const { data: orderBook, isLoading: bookLoading } = useOrderBook(assetCode, issuer) as {
-    data?: any
-    isLoading: boolean
-  }
-
-  const { athPrice, atlPrice } = useMemo(() => {
-    if (!priceHistory) return { athPrice: null, atlPrice: null }
-    const allPrices: number[] = []
-    ;(["24h", "7d", "30d"] as const).forEach((range) => {
-      const rangeData = (priceHistory as any)[range]
-      if (!Array.isArray(rangeData)) return
-      rangeData.forEach((point: any) => {
-        const price = Number.parseFloat(point.pricePI)
-        if (price > 0) allPrices.push(price)
-      })
-    })
-    if (allPrices.length === 0) return { athPrice: null, atlPrice: null }
-    return {
-      athPrice: Math.max(...allPrices).toFixed(6),
-      atlPrice: Math.min(...allPrices).toFixed(6),
-    }
-  }, [priceHistory])
-
-  const displayToken = { ...token, ...(tokenDetails || {}) }
-
-  if (detailsLoading && !tokenDetails) return <TokenDetailsSkeleton />
-
-  return (
-    <div className="space-y-4 pb-10">
-      <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-        <ArrowLeft className="h-4 w-4" />
-        Market
-      </Link>
-
-      <div className="rounded-xl bg-muted px-4 py-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-          <div className="min-w-0 text-left">
-            <h1 className="truncate text-xl font-semibold">{assetCode}</h1>
-            <button type="button" onClick={() => { if (!issuer) return; navigator.clipboard.writeText(issuer); setCopied(true); setTimeout(() => setCopied(false), 1500) }} disabled={!issuer} className="mt-2 inline-flex max-w-full items-center gap-2 text-xs text-muted-foreground disabled:cursor-default">
-              <span className="truncate">{issuer ? `${issuer.slice(0, 4)}...${issuer.slice(-4)}` : "—"}</span>
-              {issuer && <Copy className="h-3.5 w-3.5 shrink-0" />}
-              {issuer && <span>{copied ? "Copied" : "Copy"}</span>}
-            </button>
-          </div>
-          <div className="shrink-0 text-right">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Current price</div>
-            <div className="mt-1 text-2xl font-bold tabular-nums">{displayToken?.price ? `${displayToken.price} π` : "—"}</div>
-            {detailsLoading && <Loader2 className="ml-auto mt-2 h-4 w-4 animate-spin text-muted-foreground" />}
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: "24h volume", value: (displayToken as any)?.volume24h ? `${(displayToken as any).volume24h} π` : "—" },
+          { label: "Market cap", value: (displayToken as any)?.marketCap ? `${(displayToken as any).marketCap} π` : "—" },
           { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
           { label: "Trustlines", value: displayToken?.trustlines != null ? String(displayToken.trustlines) : "—" },
+          { label: "Holders", value: displayToken?.holders != null ? String(displayToken.holders) : "—" },
           { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },
-          { label: "All-time high", value: athPrice ? `${athPrice} π` : "—" },
+          { label: "24h volume", value: (displayToken as any)?.volume24h ? `${(displayToken as any).volume24h} π` : "—" },
           { label: "All-time low", value: atlPrice ? `${atlPrice} π` : "—" },
+          { label: "All-time high", value: athPrice ? `${athPrice} π` : "—" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl bg-muted p-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
             <div className="mt-1 truncate text-sm font-semibold">{stat.value}</div>
           </div>
         ))}
-      </div>
-
-      <div className="rounded-xl bg-muted p-3">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Market cap</div>
-        <div className="mt-1 text-sm font-semibold">{(displayToken as any)?.marketCap ? `${(displayToken as any).marketCap} π` : "—"}</div>
       </div>
 
       <section className="space-y-3">
