@@ -696,6 +696,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
   circulatingSupplyRaw: number | null
   poolBalance: string | null
   flags: TokenIssuerFlags | null
+  success: boolean
 }> {
   try {
     const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
@@ -710,7 +711,8 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
         circulatingSupplyRaw: null,
         poolBalance: null,
         flags: null,
-      }
+      success: false,
+
     }
 
     const assetData: any = await assetResponse.json()
@@ -724,7 +726,8 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
         circulatingSupplyRaw: null,
         poolBalance: null,
         flags: null,
-      }
+      success: false,
+
     }
 
     // Pi Horizon's /assets response exposes circulating account balances
@@ -798,7 +801,8 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       circulatingSupplyRaw: null,
       poolBalance: null,
       flags: null,
-    }
+    success: false,
+
   }
 }
 
@@ -857,6 +861,11 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
 
   const athValue = historyPrices.length > 0 ? Math.max(...historyPrices) : null
   const atlValue = historyPrices.length > 0 ? Math.min(...historyPrices) : null
+
+  if (!assetRecord.success) {
+    const stale = getStaleCache<TokenDetailsData>(cacheKey)
+    if (stale) return stale
+  }
 
   const marketCapValue =
     price != null && assetRecord.circulatingSupplyRaw != null
