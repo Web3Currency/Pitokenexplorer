@@ -12,6 +12,32 @@ export { CACHE_KEYS, getCacheTimestamp }
 
 const PI_HORIZON_URL = "https://api.testnet.minepi.com"
 
+const HORIZON_MAX_RETRIES = 3
+const HORIZON_RETRY_DELAYS_MS = [500, 1000, 2000] as const
+
+async function fetchHorizon(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  let lastError: unknown = null
+
+  for (let attempt = 0; attempt <= HORIZON_MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(input, init)
+
+      if (response.ok || response.status < 500 || attempt === HORIZON_MAX_RETRIES) {
+        return response
+      }
+    } catch (error) {
+      lastError = error
+      if (attempt === HORIZON_MAX_RETRIES) throw error
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, HORIZON_RETRY_DELAYS_MS[attempt] ?? HORIZON_RETRY_DELAYS_MS[HORIZON_RETRY_DELAYS_MS.length - 1]),
+    )
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Horizon request failed")
+}
+
 const PAGINATION_LIMITS = {
   POOLS_MAX_PAGES: 50, // Up to 10,000 pool records
   POOLS_PER_PAGE: 200, // Horizon max per page
@@ -172,7 +198,7 @@ export async function fetchCachedPools(): Promise<PoolData[]> {
 
   while (url && pageCount < PAGINATION_LIMITS.POOLS_MAX_PAGES) {
     try {
-      const response: any = await fetch(url, {
+      const response: any = await fetchHorizon(url, {
         next: { revalidate: 900 },
       })
       if (!response.ok) {
@@ -700,7 +726,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
 }> {
   try {
     const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
-    const assetResponse: any = await fetch(assetUrl, { next: { revalidate: 300 } })
+    const assetResponse: any = await fetchHorizon(assetUrl, { next: { revalidate: 300 } })
 
     if (!assetResponse.ok) {
       console.error(`Horizon assets request failed for ${assetCode}: ${assetResponse.status}`)
@@ -711,8 +737,8 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
         circulatingSupplyRaw: null,
         poolBalance: null,
         flags: null,
-      success: false,
-
+        success: false,
+      }
     }
 
     const assetData: any = await assetResponse.json()
@@ -726,8 +752,8 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
         circulatingSupplyRaw: null,
         poolBalance: null,
         flags: null,
-      success: false,
-
+        success: false,
+      }
     }
 
     // Pi Horizon's /assets response exposes circulating account balances
@@ -801,8 +827,8 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       circulatingSupplyRaw: null,
       poolBalance: null,
       flags: null,
-    success: false,
-
+        success: false,
+      }
   }
 }
 
@@ -1011,7 +1037,7 @@ async function fetchPoolOperations(poolId: string, sinceTimestamp: number): Prom
 
   while (nextUrl && pageCount < PAGINATION_LIMITS.OPERATIONS_MAX_PAGES) {
     try {
-      const response: any = await fetch(nextUrl, {
+      const response: any = await fetchHorizon(nextUrl, {
         next: { revalidate: 600 }, // 10 min revalidation
       })
       if (!response.ok) break
@@ -1244,7 +1270,7 @@ async function fetchPoolOperationsForPrice(poolId: string, sinceTimestamp: numbe
 
   while (nextUrl && pageCount < PAGINATION_LIMITS.OPERATIONS_MAX_PAGES) {
     try {
-      const response: any = await fetch(nextUrl, {
+      const response: any = await fetchHorizon(nextUrl, {
         next: { revalidate: 600 }, // 10 min revalidation
       })
       if (!response.ok) {
@@ -1460,7 +1486,7 @@ async function calculateLiquidity24hChange(pools: PoolData[]): Promise<string | 
 
       while (nextUrl && pageCount < 2) {
         try {
-          const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
+          const response: any = await fetchHorizon(nextUrl, { next: { revalidate: 600 } })
           if (!response.ok) break
           const data: any = await response.json()
           const records = data._embedded?.records ?? []
@@ -1518,7 +1544,7 @@ async function sumPoolPiVolume24h(poolId: string): Promise<string | null> {
 
   while (nextUrl && pageCount < 2) {
     try {
-      const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
+      const response: any = await fetchHorizon(nextUrl, { next: { revalidate: 600 } })
       if (!response.ok) break
       const data: any = await response.json()
       const records = data._embedded?.records ?? []
@@ -1591,7 +1617,7 @@ async function calculateVolume24hChange(pools: PoolData[]): Promise<string | nul
 
       while (nextUrl && pageCount < 2 && operationCount < 200) {
         try {
-          const response: any = await fetch(nextUrl, { next: { revalidate: 600 } })
+          const response: any = await fetchHorizon(nextUrl, { next: { revalidate: 600 } })
           if (!response.ok) break
 
           const data: any = await response.json()
@@ -1711,7 +1737,7 @@ async function getTokenFirstSeenTime(poolId: string): Promise<number | null> {
 
   try {
     // Fetch the oldest operations for this pool
-    const response: any = await fetch(
+    const response: any = await fetchHorizon(
       `${PI_HORIZON_URL}/liquidity_pools/${poolId}/operations?limit=1&order=asc`,
       { next: { revalidate: 3600 } }, // Cache for 1 hour since this doesn't change
     )
@@ -1838,7 +1864,7 @@ async function fetchAssetStatsWithHoldersForVerification(
 ): Promise<{ trustlines: number; holderCount: number }> {
   try {
     const assetParam = `${assetCode}:${assetIssuer}`
-    const accRes: any = await fetch(`${PI_HORIZON_URL}/accounts?asset=${assetParam}&limit=1`, { next: { revalidate: 300 } })
+    const accRes: any = await fetchHorizon(`${PI_HORIZON_URL}/accounts?asset=${assetParam}&limit=1`, { next: { revalidate: 300 } })
 
     if (!accRes.ok) {
       return { trustlines: 0, holderCount: 0 }
@@ -1876,7 +1902,7 @@ async function getOrderBookWithStatus(assetCode: string, assetIssuer: string): P
   try {
     const assetType = assetCode.length > 4 ? "credit_alphanum12" : "credit_alphanum4"
     const url = `${PI_HORIZON_URL}/order_book?selling_asset_type=${assetType}&selling_asset_code=${encodeURIComponent(assetCode)}&selling_asset_issuer=${encodeURIComponent(assetIssuer)}&buying_asset_type=native&limit=10`
-    const response: any = await fetch(url, { next: { revalidate: 30 } })
+    const response: any = await fetchHorizon(url, { next: { revalidate: 30 } })
     if (!response.ok) return { data: empty, status: "error" }
     const data: any = await response.json()
     const bids = (data.bids || []).slice(0, 5).map((level: any) => ({ price: Number.parseFloat(level.price).toFixed(6), amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }) }))
@@ -1921,7 +1947,7 @@ export async function getIssuerCurrencyMetadata(assetCode: string, assetIssuer: 
   const empty = { image: null, desc: null, tomlUrl: null }
   try {
     const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
-    const assetResponse = await fetch(assetUrl, { next: { revalidate: 3600 } })
+    const assetResponse = await fetchHorizon(assetUrl, { next: { revalidate: 3600 } })
     if (!assetResponse.ok) return empty
     const assetData = await assetResponse.json()
     const tomlUrl = assetData?._embedded?.records?.[0]?._links?.toml?.href
