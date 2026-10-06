@@ -290,7 +290,7 @@ export async function getProcessedPools(): Promise<ProcessedPool[]> {
         tvl: totalTVL.toLocaleString(),
         totalLockedAsset: totalLockedAsset.toLocaleString(),
         liquidity: mainPoolLiquidity ? mainPoolLiquidity.toLocaleString() : null,
-        price: price ? price.toFixed(4) : null,
+        price: price != null ? price.toFixed(4) : previous?.price ?? null,
         volume24h: null,
         providers: totalProviders,
         fee: mainPool?.fee_bp != null ? `${(mainPool.fee_bp / 100).toFixed(2)}%` : null,
@@ -800,27 +800,30 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
     totalLiquidity += p.piAmount
   })
 
+  const previous = getStaleCache<TokenDetailsData>(cacheKey)
   const assetRecord = await fetchOfficialAssetRecord(assetCode, assetIssuer)
 
+  const effectivePrice = price ?? previous?.price ? price : null
+  const effectiveCirculatingSupplyRaw = assetRecord.circulatingSupplyRaw ?? null
   const marketCapValue =
-    price != null && assetRecord.circulatingSupplyRaw != null
-      ? price * assetRecord.circulatingSupplyRaw
+    effectivePrice != null && effectiveCirculatingSupplyRaw != null
+      ? effectivePrice * effectiveCirculatingSupplyRaw
       : null
 
   const result: TokenDetailsData = {
     id: `${assetCode}:${assetIssuer}`,
     price: price ? price.toFixed(4) : null,
-    liquidity: mainPoolLiquidity > 0 ? mainPoolLiquidity.toLocaleString() : null,
-    totalLiquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() : null,
-    trustlines: assetRecord.trustlines,
-    holders: assetRecord.holders,
-    circulatingSupply: assetRecord.circulatingSupply,
-    poolBalance: assetRecord.poolBalance,
-    marketCap: marketCapValue != null ? marketCapValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null,
+    liquidity: mainPoolLiquidity > 0 ? mainPoolLiquidity.toLocaleString() : previous?.liquidity ?? null,
+    totalLiquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() : previous?.totalLiquidity ?? null,
+    trustlines: assetRecord.trustlines ?? previous?.trustlines ?? null,
+    holders: assetRecord.holders ?? previous?.holders ?? null,
+    circulatingSupply: assetRecord.circulatingSupply ?? previous?.circulatingSupply ?? null,
+    poolBalance: assetRecord.poolBalance ?? previous?.poolBalance ?? null,
+    marketCap: marketCapValue != null ? marketCapValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : previous?.marketCap ?? null,
     poolId: mainPool?.pool.id || null,
     athPrice: null,
     atlPrice: null,
-    volume24h: mainPool ? await sumPoolPiVolume24h(mainPool.pool.id) : null,
+    volume24h: mainPool ? (await sumPoolPiVolume24h(mainPool.pool.id)) ?? previous?.volume24h ?? null : previous?.volume24h ?? null,
   }
 
   // Cache with PRICES TTL (shorter) since price is the most time-sensitive
