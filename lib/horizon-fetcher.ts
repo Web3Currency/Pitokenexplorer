@@ -98,7 +98,6 @@ export interface TokenDetailsData {
   holders: number
   circulatingSupply: string | null
   poolBalance: string | null
-  issuerFlags: string | null
   poolId: string | null
   athPrice: string | null // Added ATH price
   atlPrice: string | null // Added ATL price
