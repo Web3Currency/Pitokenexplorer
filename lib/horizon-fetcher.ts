@@ -13,12 +13,10 @@ export { CACHE_KEYS, getCacheTimestamp }
 const PI_HORIZON_URL = "https://api.testnet.minepi.com"
 
 const PAGINATION_LIMITS = {
-  POOLS_MAX_PAGES: 50, // Increased from 2 to 50 pages (up to 10,000 records)
+  POOLS_MAX_PAGES: 50, // Up to 10,000 pool records
   POOLS_PER_PAGE: 200, // Horizon max per page
-  ACCOUNTS_MAX_PAGES: 100, // Paginate Horizon account/trustline records until exhausted (with a safety cap)
-  ACCOUNTS_PER_PAGE: 200, // Horizon max per page
   TOKEN_POOLS_LIMIT: 100, // Max pools per token
-  OPERATIONS_PER_PAGE: 200, // Added pagination limits for operations/trades
+  OPERATIONS_PER_PAGE: 200, // Pagination limit for operations/trades
   OPERATIONS_MAX_PAGES: 10, // Limit to prevent excessive fetching
 } as const
 
@@ -95,7 +93,7 @@ export interface TokenDetailsData {
   liquidity: string | null
   totalLiquidity: string | null // Added total liquidity across all pools
   trustlines: number
-  holders: number
+  holders: number | null
   circulatingSupply: string | null
   poolBalance: string | null
   poolId: string | null
@@ -650,76 +648,90 @@ export async function getTokenRegistry(): Promise<any[]> {
  * - Trustlines and Holders properly distinguished
  */
 async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string): Promise<{
-  trustlines: number
-  holders: number
+  trustlines: number | null
+  holders: number | null
   circulatingSupply: string | null
   circulatingSupplyRaw: number | null
   poolBalance: string | null
 }> {
-  const empty = {
-    trustlines: 0,
-    holders: 0,
-    circulatingSupply: null,
-    circulatingSupplyRaw: null,
-    poolBalance: null,
-  }
-
   try {
-    const assetParam = `${assetCode}:${assetIssuer}`
     const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
     const assetResponse: any = await fetch(assetUrl, { next: { revalidate: 300 } })
-    if (!assetResponse.ok) return empty
+
+    if (!assetResponse.ok) {
+      console.error(`Horizon assets request failed for ${assetCode}: ${assetResponse.status}`)
+      return {
+        trustlines: null,
+        holders: null,
+        circulatingSupply: null,
+        circulatingSupplyRaw: null,
+        poolBalance: null,
+      }
+    }
 
     const assetData: any = await assetResponse.json()
     const asset = assetData._embedded?.records?.[0]
-    if (!asset) return empty
+
+    if (!asset) {
+      return {
+        trustlines: null,
+        holders: null,
+        circulatingSupply: null,
+        circulatingSupplyRaw: null,
+        poolBalance: null,
+      }
+    }
 
     const circulatingSupplyRaw = Number.parseFloat(String(asset.amount ?? ""))
     const circulatingSupply = Number.isFinite(circulatingSupplyRaw)
       ? circulatingSupplyRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
       : null
 
-    let trustlines = 0
-    let holders = 0
-    let nextUrl: string | null =
-      `${PI_HORIZON_URL}/accounts?asset=${encodeURIComponent(assetParam)}&limit=${PAGINATION_LIMITS.ACCOUNTS_PER_PAGE}`
-    let pageCount = 0
+    // Horizon's /assets response already contains the trustline/account count.
+    // Use it directly instead of crawling /accounts?asset=..., which can return
+    // tens of megabytes for a popular asset.
+    const legacyTrustlines = Number(asset.num_accounts)
+    const accountStats = asset.accounts
+    const accountStatValues = accountStats && typeof accountStats === "object"
+      ? [
+          accountStats.authorized,
+          accountStats.authorized_to_maintain_liabilities,
+          accountStats.unauthorized,
+        ].map((value) => Number(value)).filter((value) => Number.isFinite(value))
+      : []
 
-    while (nextUrl && pageCount < PAGINATION_LIMITS.ACCOUNTS_MAX_PAGES) {
-      const accountResponse: any = await fetch(nextUrl, { next: { revalidate: 300 } })
-      if (!accountResponse.ok) break
-
-      const accountData: any = await accountResponse.json()
-      const records = accountData._embedded?.records || []
-      if (records.length === 0) break
-
-      for (const account of records) {
-        const balance = account.balances?.find(
-          (b: any) => b.asset_code === assetCode && b.asset_issuer === assetIssuer,
-        )
-        if (!balance) continue
-
-        trustlines += 1
-        if (Number.parseFloat(balance.balance) > 0) holders += 1
-      }
-
-      if (records.length < PAGINATION_LIMITS.ACCOUNTS_PER_PAGE) break
-      nextUrl = accountData._links?.next?.href || null
-      pageCount += 1
+    let trustlines: number | null = null
+    if (Number.isFinite(legacyTrustlines)) {
+      trustlines = Math.max(0, Math.trunc(legacyTrustlines))
+    } else if (accountStatValues.length > 0) {
+      trustlines = Math.max(0, Math.trunc(accountStatValues.reduce((sum, value) => sum + value, 0)))
     }
+
+    // /assets does not expose the exact positive-balance holder count.
+    // Do not manufacture a holder count and do not crawl all accounts here.
+    const holders: number | null = null
+
+    const poolBalanceRaw = Number.parseFloat(String(asset.liquidity_pools_amount ?? ""))
+    const poolBalance = Number.isFinite(poolBalanceRaw)
+      ? poolBalanceRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : null
 
     return {
       trustlines,
       holders,
       circulatingSupply,
       circulatingSupplyRaw: Number.isFinite(circulatingSupplyRaw) ? circulatingSupplyRaw : null,
-      poolBalance: Number.isFinite(Number.parseFloat(String(asset.liquidity_pools_amount ?? "")))
-        ? Number.parseFloat(String(asset.liquidity_pools_amount)).toLocaleString(undefined, { maximumFractionDigits: 2 })
-        : null,
+      poolBalance,
     }
   } catch (error) {
-    console.error("Error fetching token asset/account data:", error)
-    return empty
+    console.error("Error fetching token asset data:", error)
+    return {
+      trustlines: null,
+      holders: null,
+      circulatingSupply: null,
+      circulatingSupplyRaw: null,
+      poolBalance: null,
+    }
   }
 }
 
