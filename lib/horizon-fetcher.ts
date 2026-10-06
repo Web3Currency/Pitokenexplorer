@@ -1850,3 +1850,50 @@ export async function getOrderBook(assetCode: string, assetIssuer: string): Prom
     return empty
   }
 }
+
+
+export interface IssuerCurrencyMetadata {
+  image: string | null
+  desc: string | null
+  tomlUrl: string | null
+}
+
+function parseCurrencyBlocks(toml: string): Array<Record<string, string>> {
+  const blocks: Array<Record<string, string>> = []
+  const parts = toml.split(/\[\[CURRENCIES\]\]/i).slice(1)
+  for (const part of parts) {
+    const entry: Record<string, string> = {}
+    const body = part.split(/\n\[\[/)[0]
+    for (const line of body.split("\n")) {
+      const match = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*"(.*)"\s*$/)
+      if (match) entry[match[1]] = match[2]
+    }
+    if (Object.keys(entry).length > 0) blocks.push(entry)
+  }
+  return blocks
+}
+
+export async function getIssuerCurrencyMetadata(assetCode: string, assetIssuer: string): Promise<IssuerCurrencyMetadata> {
+  const empty = { image: null, desc: null, tomlUrl: null }
+  try {
+    const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
+    const assetResponse = await fetch(assetUrl, { next: { revalidate: 3600 } })
+    if (!assetResponse.ok) return empty
+    const assetData = await assetResponse.json()
+    const tomlUrl = assetData?._embedded?.records?.[0]?._links?.toml?.href
+    if (!tomlUrl || typeof tomlUrl !== "string") return empty
+
+    const tomlResponse = await fetch(tomlUrl, { next: { revalidate: 3600 } })
+    if (!tomlResponse.ok) return { ...empty, tomlUrl }
+    const toml = await tomlResponse.text()
+    const match = parseCurrencyBlocks(toml).find((entry) => entry.code === assetCode && entry.issuer === assetIssuer)
+    if (!match) return { ...empty, tomlUrl }
+
+    const image = match.image && /^https?:\/\//i.test(match.image) ? match.image : null
+    const desc = match.desc?.trim() ? match.desc.trim() : null
+    return { image, desc, tomlUrl }
+  } catch (error) {
+    console.error("Error fetching issuer currency metadata:", error)
+    return empty
+  }
+}
