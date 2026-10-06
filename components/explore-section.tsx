@@ -244,8 +244,8 @@ function BackToTopControl({ onClick }: { onClick: () => void }) {
       title="Back to top"
       className="absolute left-1/2 top-1/2 z-10 flex h-9 w-10 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
     >
-      <span className="flex -mb-1 animate-pulse">
-        <ChevronUp className="h-4 w-4 -mb-2" />
+      <span className="flex flex-col items-center animate-pulse -space-y-1">
+        <ChevronUp className="h-4 w-4" />
         <ChevronUp className="h-4 w-4" />
       </span>
     </button>
