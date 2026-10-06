@@ -803,8 +803,10 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
   const previous = getStaleCache<TokenDetailsData>(cacheKey)
   const assetRecord = await fetchOfficialAssetRecord(assetCode, assetIssuer)
 
-  const effectivePrice = price ?? previous?.price ? price : null
-  const effectiveCirculatingSupplyRaw = assetRecord.circulatingSupplyRaw ?? null
+  const effectivePrice = price ?? (previous?.price ? Number.parseFloat(previous.price) : null)
+  const effectiveCirculatingSupplyRaw =
+    assetRecord.circulatingSupplyRaw ??
+    (previous?.circulatingSupply ? Number.parseFloat(previous.circulatingSupply.replace(/,/g, "")) : null)
   const marketCapValue =
     effectivePrice != null && effectiveCirculatingSupplyRaw != null
       ? effectivePrice * effectiveCirculatingSupplyRaw
