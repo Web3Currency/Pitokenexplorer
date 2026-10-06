@@ -817,6 +817,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       circulatingSupplyRaw: Number.isFinite(circulatingSupplyRaw) ? circulatingSupplyRaw : null,
       poolBalance,
       flags,
+      success: true,
     }
   } catch (error) {
     console.error("Error fetching token asset data:", error)
