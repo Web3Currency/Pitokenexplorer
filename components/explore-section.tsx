@@ -11,7 +11,6 @@ import {
   BarChart3,
   Info,
   Package,
-  Loader2,
   AlertCircle,
   X,
   ArrowUp,
@@ -19,7 +18,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowDown,
-  Minus,
   Droplets,
   Clock,
   Globe2,
@@ -112,10 +110,7 @@ function UnifiedStatsCard({
               className={`text-xs font-semibold flex items-center gap-1 mt-1 ${getChangeColor(stats.volume24hChange)}`}
             >
               {isDeferredLoading ? (
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span className="text-[10px]">Loading...</span>
-                </span>
+                <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" />
               ) : stats.volume24hChange ? (
                 <>
                   {Number.parseFloat(stats.volume24hChange) >= 0 ? (
@@ -126,7 +121,7 @@ function UnifiedStatsCard({
                   {stats.volume24hChange}
                 </>
               ) : (
-                <span className="text-muted-foreground">—</span>
+                
               )}
             </div>
           </button>
@@ -163,14 +158,14 @@ function UnifiedStatsCard({
             <div className="space-y-3 text-sm"><div className="flex justify-between">
                 <span className="text-muted-foreground">24h Volume</span>
                 <span className="font-semibold">
-                  {isDeferredLoading ? <Loader2 className="h-3 w-3 animate-spin inline" /> : stats.totalVolume24h || "—"}
+                  {isDeferredLoading ? <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" /> : stats.totalVolume24h || "—"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">24h Volume Change</span>
                 <span className={`font-semibold ${getChangeColor(stats.volume24hChange)}`}>
                   {isDeferredLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin inline" />
+                    <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" />
                   ) : stats.volume24hChange ? (
                     <>
                       {Number.parseFloat(stats.volume24hChange) >= 0 ? (
@@ -223,7 +218,7 @@ function UnifiedStatsCard({
                 </span>
                 <span className="font-semibold">
                   {isDeferredLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin inline" />
+                    <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" />
                   ) : (
                     ((stats as any).newTokens7d ?? 0)
                   )}
@@ -640,7 +635,7 @@ export function ExploreSection() {
                           <div className="text-xs text-muted-foreground truncate">{token.issuer}</div>
                         </div>
                         <div className="text-right flex flex-col items-end">
-                          <div className="text-sm font-semibold">{token.price ? `${token.price} π` : "—"}</div>
+                          <div className="text-sm font-semibold">{token.price ? `${token.price} π` : null}</div>
                           <div className="flex items-center justify-end">
                             {rankMovement === "up" ? (
                               <ArrowUp className="h-3.5 w-3.5 text-green-500" />
