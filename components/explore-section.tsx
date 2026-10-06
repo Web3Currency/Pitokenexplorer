@@ -640,7 +640,7 @@ export function ExploreSection() {
                             ) : rankMovement === "down" ? (
                               <ArrowDown className="h-3.5 w-3.5 text-red-500" />
                             ) : (
-                              <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                              
                             )}
                           </div>
                         </div>
