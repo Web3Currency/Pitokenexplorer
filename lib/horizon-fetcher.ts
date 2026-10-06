@@ -682,8 +682,20 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       }
     }
 
-    const circulatingSupplyRaw = Number.parseFloat(String(asset.amount ?? ""))
-    const circulatingSupply = Number.isFinite(circulatingSupplyRaw)
+    // Pi Horizon's /assets response exposes circulating account balances
+    // under balances, not the Stellar-style "amount" field.
+    const balanceValues = asset.balances && typeof asset.balances === "object"
+      ? [
+          asset.balances.authorized,
+          asset.balances.authorized_to_maintain_liabilities,
+          asset.balances.unauthorized,
+        ].map((value) => Number.parseFloat(String(value ?? ""))).filter((value) => Number.isFinite(value))
+      : []
+
+    const circulatingSupplyRaw = balanceValues.length > 0
+      ? balanceValues.reduce((sum, value) => sum + value, 0)
+      : null
+    const circulatingSupply = circulatingSupplyRaw != null
       ? circulatingSupplyRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
       : null
 
