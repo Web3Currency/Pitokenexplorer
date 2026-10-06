@@ -712,7 +712,7 @@ export function ExploreSection() {
                   ))}
 
                   {filteredPools.length > PAGE_SIZE && (
-                    <div className="flex items-center justify-between pt-4 pb-2">
+                    <div className="relative flex items-center justify-between pt-4 pb-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -734,6 +734,11 @@ export function ExploreSection() {
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                       {showBackToTop && <BackToTopControl onClick={scrollToTop} />}
+                    </div>
+                  )}
+                  {filteredPools.length > 0 && filteredPools.length <= PAGE_SIZE && showBackToTop && (
+                    <div className="relative flex justify-center pt-4 pb-2">
+                      <BackToTopControl onClick={scrollToTop} />
                     </div>
                   )}
                 </div>
