@@ -361,6 +361,7 @@ export function ExploreSection() {
   const { data: stats, isLoading: statsLoading, isDeferredLoading } = useMarketStats()
   const { data: domains = [] } = useDomains()
   const { data: tokenPrices } = useTokenPrices()
+  const [tokenMetadata, setTokenMetadata] = useState<Record<string, { image: string | null }>>({})
   
   // Debug: Log sample token data when loaded
   useEffect(() => {
@@ -530,6 +531,34 @@ export function ExploreSection() {
     return filteredPools.slice(startIndex, startIndex + PAGE_SIZE)
   }, [filteredPools, poolPage])
 
+
+  useEffect(() => {
+    if (activeTab !== "market" || paginatedTokens.length === 0) return
+    let cancelled = false
+    const loadTokenMetadata = async () => {
+      const entries = await Promise.all(
+        paginatedTokens.map(async (token) => {
+          const issuer = (token as any).fullIssuer
+          if (!issuer || tokenMetadata[token.id]) return null
+          try {
+            const response = await fetch(
+              `/api/explorer/tokens/${encodeURIComponent(token.symbol)}/metadata?issuer=${encodeURIComponent(issuer)}`,
+              { headers: { Accept: "application/json" } },
+            )
+            if (!response.ok) return null
+            const metadata = await response.json()
+            return [token.id, { image: metadata?.image ?? null }] as const
+          } catch { return null }
+        }),
+      )
+      if (cancelled) return
+      const updates = entries.filter((entry): entry is readonly [string, { image: string | null }] => entry !== null)
+      if (updates.length > 0) setTokenMetadata((current) => ({ ...current, ...Object.fromEntries(updates) }))
+    }
+    void loadTokenMetadata()
+    return () => { cancelled = true }
+  }, [activeTab, paginatedTokens, tokenMetadata])
+
   useEffect(() => {
     if (tokenPage > tokenTotalPages && tokenTotalPages > 0) {
       setTokenPage(1)
@@ -648,21 +677,19 @@ export function ExploreSection() {
                         onClick={() => router.push(`/token/${encodeURIComponent(token.symbol)}?issuer=${encodeURIComponent((token as any).fullIssuer || "")}`)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
-                        {/* ENFORCE: Logo from admin ONLY - no fallbacks, no generated icons */}
-                        {(token as any).logoUrl ? (
+                        {tokenMetadata[token.id]?.image ? (
                           <img
-                            src={(token as any).logoUrl || "/placeholder.svg"}
+                            src={tokenMetadata[token.id].image!}
                             alt={token.symbol}
-                            className="w-10 h-10 rounded-full object-cover shrink-0 bg-orange-500"
+                            className="w-10 h-10 rounded-full object-cover shrink-0"
                             onError={(e) => {
-                              // If admin logo fails to load, show placeholder
-                              e.currentTarget.style.display = 'none'
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                              e.currentTarget.style.display = "none"
+                              e.currentTarget.nextElementSibling?.classList.remove("hidden")
                             }}
                           />
                         ) : null}
-                        <div 
-                          className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white text-xl shrink-0 ${(token as any).logoUrl ? 'hidden' : ''}`}
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white text-xl shrink-0 ${tokenMetadata[token.id]?.image ? "hidden" : ""}`}
                         >
                           {token.symbol[0]}
                         </div>
