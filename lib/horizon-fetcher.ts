@@ -15,7 +15,7 @@ const PI_HORIZON_URL = "https://api.testnet.minepi.com"
 const PAGINATION_LIMITS = {
   POOLS_MAX_PAGES: 50, // Increased from 2 to 50 pages (up to 10,000 records)
   POOLS_PER_PAGE: 200, // Horizon max per page
-  ACCOUNTS_MAX_PAGES: 20, // Increased from 10 to 20 pages for more complete trustline/holder counts
+  ACCOUNTS_MAX_PAGES: 100, // Paginate Horizon account/trustline records until exhausted (with a safety cap)
   ACCOUNTS_PER_PAGE: 200, // Horizon max per page
   TOKEN_POOLS_LIMIT: 100, // Max pools per token
   OPERATIONS_PER_PAGE: 200, // Added pagination limits for operations/trades
@@ -103,6 +103,7 @@ export interface TokenDetailsData {
   athPrice: string | null // Added ATH price
   atlPrice: string | null // Added ATL price
   volume24h: string | null
+  marketCap: string | null
 }
 
 export interface PoolVolumeDataPoint {
@@ -693,16 +694,21 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
 
   const assetRecord = await fetchOfficialAssetRecord(assetCode, assetIssuer)
 
+  const marketCapValue =
+    price != null && assetRecord.circulatingSupplyRaw != null
+      ? price * assetRecord.circulatingSupplyRaw
+      : null
+
   const result: TokenDetailsData = {
     id: `${assetCode}:${assetIssuer}`,
     price: price ? price.toFixed(4) : null,
     liquidity: mainPoolLiquidity > 0 ? mainPoolLiquidity.toLocaleString() : null,
     totalLiquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() : null,
     trustlines: assetRecord.trustlines,
-    holders: 0,
+    holders: assetRecord.holders,
     circulatingSupply: assetRecord.circulatingSupply,
     poolBalance: assetRecord.poolBalance,
-    issuerFlags: assetRecord.issuerFlags,
+    marketCap: marketCapValue != null ? marketCapValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null,
     poolId: mainPool?.pool.id || null,
     athPrice: null,
     atlPrice: null,
@@ -722,104 +728,83 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
 
 async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string): Promise<{
   trustlines: number
+  holders: number
   circulatingSupply: string | null
+  circulatingSupplyRaw: number | null
   poolBalance: string | null
-  issuerFlags: string | null
 }> {
-  const empty = { trustlines: 0, circulatingSupply: null, poolBalance: null, issuerFlags: null }
+  const empty = {
+    trustlines: 0,
+    holders: 0,
+    circulatingSupply: null,
+    circulatingSupplyRaw: null,
+    poolBalance: null,
+  }
+
   try {
-    const url = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
-    const response: any = await fetch(url, { next: { revalidate: 300 } })
-    if (!response.ok) return empty
-    const data: any = await response.json()
-    const asset = data._embedded?.records?.[0]
+    const assetParam = `${assetCode}:${assetIssuer}`
+    const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
+    const assetResponse: any = await fetch(assetUrl, { next: { revalidate: 300 } })
+    if (!assetResponse.ok) return empty
+
+    const assetData: any = await assetResponse.json()
+    const asset = assetData._embedded?.records?.[0]
     if (!asset) return empty
 
     const formatAmount = (value: string | number | undefined) => {
       const amount = Number.parseFloat(String(value ?? ""))
-      return Number.isFinite(amount) ? amount.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null
+      return Number.isFinite(amount)
+        ? amount.toLocaleString(undefined, { maximumFractionDigits: 2 })
+        : null
     }
-    const flags = asset.flags || {}
-    const flagLabels = [
-      flags.auth_required ? "Auth required" : null,
-      flags.auth_revocable ? "Revocable" : null,
-      flags.auth_immutable ? "Immutable" : null,
-      flags.auth_clawback_enabled ? "Clawback" : null,
-    ].filter(Boolean)
+
+    // Horizon's asset.amount is the network's current issued/circulating amount.
+    const circulatingSupplyRaw = Number.parseFloat(String(asset.amount ?? ""))
+    const circulatingSupply = Number.isFinite(circulatingSupplyRaw) ? formatAmount(circulatingSupplyRaw) : null
+
+    // Trustlines and holders come from the actual Horizon account records, not
+    // the asset.num_accounts summary, which can be incomplete/stale for these test tokens.
+    let trustlines = 0
+    let holders = 0
+    let nextUrl: string | null = `${PI_HORIZON_URL}/accounts?asset=${encodeURIComponent(assetParam)}&limit=${PAGINATION_LIMITS.ACCOUNTS_PER_PAGE}`
+    let pageCount = 0
+
+    while (nextUrl && pageCount < PAGINATION_LIMITS.ACCOUNTS_MAX_PAGES) {
+      const accountResponse: any = await fetch(nextUrl, { next: { revalidate: 300 } })
+      if (!accountResponse.ok) break
+
+      const accountData: any = await accountResponse.json()
+      const records = accountData._embedded?.records || []
+      if (records.length === 0) break
+
+      for (const account of records) {
+        const balance = account.balances?.find(
+          (b: any) => b.asset_code === assetCode && b.asset_issuer === assetIssuer,
+        )
+        if (!balance) continue
+
+        trustlines += 1
+        if (Number.parseFloat(balance.balance) > 0) holders += 1
+      }
+
+      if (records.length < PAGINATION_LIMITS.ACCOUNTS_PER_PAGE) break
+      nextUrl = accountData._links?.next?.href || null
+      pageCount += 1
+    }
 
     return {
-      trustlines: Number(asset.num_accounts) || 0,
-      circulatingSupply: formatAmount(asset.amount),
+      trustlines,
+      holders,
+      circulatingSupply,
+      circulatingSupplyRaw: Number.isFinite(circulatingSupplyRaw) ? circulatingSupplyRaw : null,
       poolBalance: formatAmount(asset.liquidity_pools_amount),
-      issuerFlags: flagLabels.length > 0 ? flagLabels.join(" · ") : "None",
     }
   } catch (error) {
-    console.error("Error fetching official asset record:", error)
+    console.error("Error fetching token asset/account data:", error)
     return empty
   }
 }
 
-async function fetchAssetStatsWithHolders(
-  assetCode: string,
-  assetIssuer: string,
-): Promise<{
-  trustlines: number
-  holderCount: number
-}> {
-  let trustlines = 0
-  let holderCount = 0
-
-  try {
-    // This includes accounts with 0 balance (trustline added but unused)
-    const assetParam = `${assetCode}:${assetIssuer}`
-    let nextUrl: string | null =
-      `${PI_HORIZON_URL}/accounts?asset=${assetParam}&limit=${PAGINATION_LIMITS.ACCOUNTS_PER_PAGE}`
-    let iterations = 0
-
-    while (nextUrl && iterations < PAGINATION_LIMITS.ACCOUNTS_MAX_PAGES) {
-      const accRes: any = await fetch(nextUrl, { next: { revalidate: 300 } })
-      if (!accRes.ok) break
-
-      const data: any = await accRes.json()
-      const records = data._embedded?.records || []
-
-      if (records.length === 0) break
-
-      records.forEach((acc: any) => {
-        const balance = acc.balances?.find((b: any) => b.asset_code === assetCode && b.asset_issuer === assetIssuer)
-
-        if (balance) {
-          // This counts ALL trustlines including 0 balance
-          trustlines++
-
-          const balVal = Number.parseFloat(balance.balance)
-          if (balVal > 0) {
-            holderCount++
-          }
-        }
-      })
-
-      if (records.length < PAGINATION_LIMITS.ACCOUNTS_PER_PAGE) {
-        break
-      }
-
-      nextUrl = data._links?.next?.href || null
-      iterations++
-    }
-  } catch (e) {
-    console.error("Error fetching asset stats:", e)
-    return { trustlines: 0, holderCount: 0 }
-  }
-
-  return { trustlines, holderCount }
-}
-
-/**
- * Get all token prices with accurate calculation from Token/PI pools
- * - Only calculates price from pools where token is paired with PI
- * - Correctly handles tokens regardless of position in pool pair
- * - Sums liquidity across all Token/PI pools for each token
- */
 export async function getAllTokenPrices(): Promise<
   Record<string, { price: string | null; liquidity: string | null; totalLiquidity: string | null }>
 > {
