@@ -92,7 +92,7 @@ export interface TokenDetailsData {
   price: string | null
   liquidity: string | null
   totalLiquidity: string | null // Added total liquidity across all pools
-  trustlines: number
+  trustlines: number | null
   holders: number | null
   circulatingSupply: string | null
   poolBalance: string | null
