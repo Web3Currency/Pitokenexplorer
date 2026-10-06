@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Copy, Loader2 } from "lucide-react"
 import type { Token } from "@/lib/mock-data"
@@ -22,6 +22,17 @@ function TokenDetailsSkeleton() {
   )
 }
 
+function formatFreshness(updatedAt: string | undefined, now: number): string {
+  if (!updatedAt) return "Updated —"
+  const elapsedSeconds = Math.max(0, Math.floor((now - new Date(updatedAt).getTime()) / 1000))
+  if (elapsedSeconds < 5) return "Updated just now"
+  if (elapsedSeconds < 60) return `Updated ${elapsedSeconds} seconds ago`
+  const minutes = Math.floor(elapsedSeconds / 60)
+  if (minutes < 60) return `Updated ${minutes} minute${minutes === 1 ? "" : "s"} ago`
+  const hours = Math.floor(minutes / 60)
+  return `Updated ${hours} hour${hours === 1 ? "" : "s"} ago`
+}
+
 export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; issuer: string }) {
   const [copied, setCopied] = useState(false)
   const token = {
@@ -35,6 +46,15 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
 
   const { data: snapshot, isLoading: snapshotLoading } = useTokenSnapshot(assetCode, issuer)
   const [logoFailed, setLogoFailed] = useState(false)
+  const [now, setNow] = useState(0)
+
+  useEffect(() => {
+    if (!snapshot?.updatedAt) return
+    const update = () => setNow(Date.now())
+    update()
+    const timer = window.setInterval(update, 1000)
+    return () => window.clearInterval(timer)
+  }, [snapshot?.updatedAt])
   const displayToken = { ...token, ...(snapshot || {}) }
   const orderBook = snapshot?.orderBook ?? { bestBid: null, bestAsk: null, spread: null, bids: [], asks: [] }
   const orderBookUnavailable = snapshot?.status.orderBook === "error" || snapshot?.status.orderBook === "unavailable"
@@ -76,6 +96,10 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
       {snapshot?.metadata.desc && (
         <p className="px-1 text-sm leading-6 text-muted-foreground">{snapshot.metadata.desc}</p>
       )}
+
+      <p className="px-1 text-xs text-muted-foreground" aria-live="polite">
+        {snapshot?.updatedAt && now > 0 ? formatFreshness(snapshot.updatedAt, now) : "Updated —"}
+      </p>
 
       <div className="grid grid-cols-2 gap-2">
         {[
