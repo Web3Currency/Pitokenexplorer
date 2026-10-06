@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Copy, Loader2 } from "lucide-react"
 import type { Token } from "@/lib/mock-data"
-import { useTokenDetails, useTokenPriceHistory, useOrderBook } from "@/lib/use-market-data"
+import { useTokenDetails, useTokenPriceHistory, useOrderBook, useTokenMetadata } from "@/lib/use-market-data"
 
 function TokenDetailsSkeleton() {
   return (
@@ -40,6 +40,8 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
     data?: any
     isLoading: boolean
   }
+  const { data: metadata } = useTokenMetadata(assetCode, issuer)
+  const [logoFailed, setLogoFailed] = useState(false)
 
   const { athPrice, atlPrice } = useMemo(() => {
     if (!priceHistory) return { athPrice: null, atlPrice: null }
@@ -72,13 +74,18 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
 
       <div className="rounded-xl bg-muted px-4 py-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-          <div className="min-w-0 text-left">
+          <div className="flex min-w-0 items-center gap-3 text-left">
+            {metadata?.image && !logoFailed ? (
+              <img src={metadata.image} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" onError={() => setLogoFailed(true)} />
+            ) : null}
+            <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold">{assetCode}</h1>
             <button type="button" onClick={() => { if (!issuer) return; navigator.clipboard.writeText(issuer); setCopied(true); setTimeout(() => setCopied(false), 1500) }} disabled={!issuer} className="mt-2 inline-flex max-w-full items-center gap-2 text-xs text-muted-foreground disabled:cursor-default">
               <span className="truncate">{issuer ? `${issuer.slice(0, 4)}...${issuer.slice(-4)}` : "—"}</span>
               {issuer && <Copy className="h-3.5 w-3.5 shrink-0" />}
               {issuer && <span>{copied ? "Copied" : "Copy"}</span>}
             </button>
+            </div>
           </div>
           <div className="shrink-0 text-right">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Current price</div>
@@ -87,6 +94,10 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           </div>
         </div>
       </div>
+
+      {metadata?.desc ? (
+        <p className="text-sm leading-relaxed text-muted-foreground">{metadata.desc}</p>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-2">
         {[

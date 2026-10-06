@@ -251,3 +251,12 @@ export function useOrderBook(assetCode: string | null, issuer: string | null) {
     { ...baseSwrConfig, refreshInterval: 30000, revalidateOnMount: true },
   )
 }
+
+export function useTokenMetadata(assetCode: string | null, issuer: string | null) {
+  const shouldFetch = Boolean(assetCode && issuer)
+  return useSWR<{ image: string | null; desc: string | null }>(
+    shouldFetch ? `/api/explorer/tokens/${assetCode}/metadata?issuer=${issuer}` : null,
+    fetcher,
+    { ...baseSwrConfig, refreshInterval: 0, revalidateOnMount: true },
+  )
+}
