@@ -19,8 +19,6 @@ import {
   ChevronRight,
   ArrowDown,
   ChevronUp,
-  Droplets,
-  Clock,
   Globe2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -231,6 +229,91 @@ function TokenListSkeleton({ rows = 6 }: { rows?: number }) {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+function SortMenu({
+  options,
+  sortBy,
+  sortAsc,
+  onSelect,
+}: {
+  options: Array<{ key: "price" | "liquidity" | "change24h" | "tvl" | "name"; label: string }>
+  sortBy: "price" | "liquidity" | "change24h" | "tvl" | "name"
+  sortAsc: boolean
+  onSelect: (key: "price" | "liquidity" | "change24h" | "tvl" | "name", asc: boolean) => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        aria-label="Sort"
+        aria-expanded={open}
+        title="Sort"
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          "h-11 w-11 rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
+          open && "text-primary border-primary/40",
+        )}
+      >
+        <ArrowUpDown className="h-4 w-4" />
+      </button>
+
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-label="Close sort menu"
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-card p-2 shadow-lg">
+            {options.map((option) => {
+              const active = sortBy === option.key
+              return (
+                <div key={option.key} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5">
+                  <span className={cn("text-sm font-medium", active && "text-primary")}>{option.label}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={`Sort ${option.label} ascending`}
+                      title="Ascending"
+                      onClick={() => {
+                        onSelect(option.key, true)
+                        setOpen(false)
+                      }}
+                      className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground",
+                        active && sortAsc && "bg-primary/10 text-primary",
+                      )}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Sort ${option.label} descending`}
+                      title="Descending"
+                      onClick={() => {
+                        onSelect(option.key, false)
+                        setOpen(false)
+                      }}
+                      className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground",
+                        active && !sortAsc && "bg-primary/10 text-primary",
+                      )}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -522,66 +605,28 @@ export function ExploreSection() {
                 className="h-11 pl-9 bg-muted border-0 shadow-none rounded-xl"
               />
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {(activeTab === "market"
-                ? [
-                    ["price", "Price"],
-                    ["liquidity", "Liquidity"],
-                    ["change24h", "24h"],
-                  ]
-                : activeTab === "liquidityPools"
+            <SortMenu
+              options={
+                activeTab === "market"
                   ? [
-                      ["tvl", "TVL"],
-                      ["name", "Name"],
+                      { key: "price", label: "Price" },
+                      { key: "liquidity", label: "Liquidity" },
+                      { key: "change24h", label: "24h Change" },
                     ]
-                  : [["name", "Name"]]
-              ).map(([key, label]) => {
-                const isActive = sortBy === key
-
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    title={label}
-                    aria-label={"Sort by " + label + (isActive ? (liquiditySortAsc ? ", ascending" : ", descending") : "")}
-                    onClick={() => {
-                      if (sortBy === key) setLiquiditySortAsc((current) => !current)
-                      else {
-                        setSortBy(key as "price" | "liquidity" | "change24h" | "tvl" | "name")
-                        setLiquiditySortAsc(false)
-                      }
-                    }}
-                    className={cn(
-                      "shrink-0 inline-flex h-8 min-w-8 items-center justify-center gap-0.5 bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground",
-                      isActive && "text-primary",
-                    )}
-                  >
-                    {activeTab === "market" && key === "price" ? (
-                      <span className="text-base font-semibold leading-none" aria-hidden="true">π</span>
-                    ) : activeTab === "market" && key === "liquidity" ? (
-                      <Droplets className="h-4 w-4" aria-hidden="true" />
-                    ) : activeTab === "market" && key === "change24h" ? (
-                      <Clock className="h-4 w-4" aria-hidden="true" />
-                    ) : activeTab === "domain" ? (
-                      <Globe2 className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <ArrowUpDown className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    {isActive && (
-                      liquiditySortAsc ? (
-                        <ArrowUp className="h-3 w-3" aria-hidden="true" />
-                      ) : (
-                        <ArrowDown className="h-3 w-3" aria-hidden="true" />
-                      )
-                    )}
-                    {isActive && (
-                      <span className="sr-only">{liquiditySortAsc ? "Ascending" : "Descending"}</span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+                  : activeTab === "liquidityPools"
+                    ? [
+                        { key: "tvl", label: "TVL" },
+                        { key: "name", label: "Name" },
+                      ]
+                    : [{ key: "name", label: "Name" }]
+              }
+              sortBy={sortBy}
+              sortAsc={liquiditySortAsc}
+              onSelect={(key, asc) => {
+                setSortBy(key)
+                setLiquiditySortAsc(asc)
+              }}
+            />          </div>
 
           {activeTab === "market" && error ? (
             <div className="flex flex-col items-center justify-center py-12 text-destructive">
