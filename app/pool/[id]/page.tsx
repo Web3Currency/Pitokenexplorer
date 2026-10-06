@@ -28,26 +28,21 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           <p className="mt-6 text-sm text-muted-foreground">Pool not found.</p>
         ) : (
           <div className="mt-4 space-y-4 pb-10">
+            <h1 className="text-center text-xl font-semibold">{pool.title || `${pool.tokenCode} Pools`}</h1>
             <div className="rounded-xl bg-muted px-4 py-5 text-center">
-              <h1 className="text-xl font-semibold">{pool.title || `${pool.tokenCode} Pools`}</h1>
-              <div className="mt-3 text-2xl font-bold">
-                {pool.totalLockedAsset || "—"} {pool.tokenCode}
-              </div>
-              <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-                Total {pool.tokenCode} locked
-              </div>
-              <div className="mt-3 text-sm font-semibold">{pool.tvl || "—"} π TVL</div>
+              <div className="text-3xl font-bold">{pool.tvl || "—"} π</div>
+              <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">TVL</div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-muted p-3">
+              <div className="rounded-xl bg-muted p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool fee</div>
                 <div className="mt-1 text-sm font-semibold">{pool.fee || "—"}</div>
               </div>
-              <div className="rounded-xl bg-muted p-3">
+              <div className="rounded-xl bg-muted p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool shares</div>
                 <div className="mt-1 truncate text-sm font-semibold">{pool.totalShares || "—"}</div>
               </div>
-              <div className="col-span-2 rounded-xl bg-muted p-3">
+              <div className="col-span-2 rounded-xl bg-muted p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Last activity</div>
                 <div className="mt-1 text-sm font-semibold">{pool.lastActive || "—"}</div>
               </div>
