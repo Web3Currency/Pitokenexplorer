@@ -1,10 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Copy, Loader2 } from "lucide-react"
 import type { Token } from "@/lib/mock-data"
-import { useTokenDetails, useTokenPriceHistory, useOrderBook } from "@/lib/use-market-data"
+import { useTokenDetails, useOrderBook } from "@/lib/use-market-data"
 
 function TokenDetailsSkeleton() {
   return (
@@ -16,8 +16,7 @@ function TokenDetailsSkeleton() {
           <div className="space-y-2 text-right"><div className="ml-auto h-3 w-20 animate-pulse rounded bg-background/50" /><div className="ml-auto h-7 w-28 animate-pulse rounded bg-background/70" /></div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div>
-      <div className="h-16 animate-pulse rounded-xl bg-muted" />
+      <div className="grid grid-cols-2 gap-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div>
       <div className="space-y-3"><div className="h-4 w-24 animate-pulse rounded bg-muted" /><div className="grid grid-cols-3 gap-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div><div className="grid grid-cols-2 gap-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="space-y-2"><div className="h-3 w-10 animate-pulse rounded bg-muted" />{Array.from({ length: 3 }).map((_, j) => <div key={j} className="h-9 animate-pulse rounded-lg bg-muted" />)}</div>)}</div></div>
     </div>
   )
@@ -35,29 +34,10 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
   } as unknown as Token
 
   const { data: tokenDetails, isLoading: detailsLoading } = useTokenDetails(assetCode, issuer)
-  const { data: priceHistory } = useTokenPriceHistory(assetCode, issuer)
   const { data: orderBook, isLoading: bookLoading } = useOrderBook(assetCode, issuer) as {
     data?: any
     isLoading: boolean
   }
-
-  const { athPrice, atlPrice } = useMemo(() => {
-    if (!priceHistory) return { athPrice: null, atlPrice: null }
-    const allPrices: number[] = []
-    ;(["24h", "7d", "30d"] as const).forEach((range) => {
-      const rangeData = (priceHistory as any)[range]
-      if (!Array.isArray(rangeData)) return
-      rangeData.forEach((point: any) => {
-        const price = Number.parseFloat(point.pricePI)
-        if (price > 0) allPrices.push(price)
-      })
-    })
-    if (allPrices.length === 0) return { athPrice: null, atlPrice: null }
-    return {
-      athPrice: Math.max(...allPrices).toFixed(6),
-      atlPrice: Math.min(...allPrices).toFixed(6),
-    }
-  }, [priceHistory])
 
   const displayToken = { ...token, ...(tokenDetails || {}) }
 
@@ -90,23 +70,20 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
 
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: "24h volume", value: (displayToken as any)?.volume24h ? `${(displayToken as any).volume24h} π` : "—" },
+          { label: "Market cap", value: (displayToken as any)?.marketCap ? String((displayToken as any).marketCap) + " π" : "—" },
           { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
           { label: "Trustlines", value: displayToken?.trustlines != null ? String(displayToken.trustlines) : "—" },
+          { label: "Holders", value: (displayToken as any)?.holders != null ? String((displayToken as any).holders) : "—" },
           { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },
-          { label: "All-time high", value: athPrice ? `${athPrice} π` : "—" },
-          { label: "All-time low", value: atlPrice ? `${atlPrice} π` : "—" },
+          { label: "24h volume", value: (displayToken as any)?.volume24h ? String((displayToken as any).volume24h) + " π" : "—" },
+          { label: "All-time low", value: (displayToken as any)?.atlPrice ? String((displayToken as any).atlPrice) + " π" : "—" },
+          { label: "All-time high", value: (displayToken as any)?.athPrice ? String((displayToken as any).athPrice) + " π" : "—" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl bg-muted p-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
             <div className="mt-1 truncate text-sm font-semibold">{stat.value}</div>
           </div>
         ))}
-      </div>
-
-      <div className="rounded-xl bg-muted p-3">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Market cap</div>
-        <div className="mt-1 text-sm font-semibold">{(displayToken as any)?.marketCap ? `${(displayToken as any).marketCap} π` : "—"}</div>
       </div>
 
       <section className="space-y-3">
