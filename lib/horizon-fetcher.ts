@@ -87,6 +87,12 @@ export interface MarketStatsData extends MarketStatsInstant {
   tokenCountChange: null
 }
 
+export interface TokenIssuerFlags {
+  authRequired: boolean | null
+  authRevocable: boolean | null
+  authClawbackEnabled: boolean | null
+}
+
 export interface TokenDetailsData {
   id: string
   price: string | null
@@ -101,6 +107,31 @@ export interface TokenDetailsData {
   atlPrice: string | null // Added ATL price
   volume24h: string | null
   marketCap: string | null
+  flags: TokenIssuerFlags | null
+}
+
+export type TokenSnapshotFieldStatus = "ok" | "unavailable" | "error"
+
+export interface TokenSnapshotStatus {
+  price: TokenSnapshotFieldStatus
+  supply: TokenSnapshotFieldStatus
+  trustlines: TokenSnapshotFieldStatus
+  holders: TokenSnapshotFieldStatus
+  poolBalance: TokenSnapshotFieldStatus
+  marketCap: TokenSnapshotFieldStatus
+  volume24h: TokenSnapshotFieldStatus
+  atlPrice: TokenSnapshotFieldStatus
+  athPrice: TokenSnapshotFieldStatus
+  flags: TokenSnapshotFieldStatus
+  orderBook: TokenSnapshotFieldStatus
+  metadata: TokenSnapshotFieldStatus
+}
+
+export interface TokenSnapshotData extends TokenDetailsData {
+  orderBook: OrderBookData
+  metadata: IssuerCurrencyMetadata
+  updatedAt: string
+  status: TokenSnapshotStatus
 }
 
 export interface PoolVolumeDataPoint {
@@ -664,6 +695,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
   circulatingSupply: string | null
   circulatingSupplyRaw: number | null
   poolBalance: string | null
+  flags: TokenIssuerFlags | null
 }> {
   try {
     const assetUrl = `${PI_HORIZON_URL}/assets?asset_code=${encodeURIComponent(assetCode)}&asset_issuer=${encodeURIComponent(assetIssuer)}&limit=1`
@@ -677,6 +709,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
         circulatingSupply: null,
         circulatingSupplyRaw: null,
         poolBalance: null,
+        flags: null,
       }
     }
 
@@ -690,6 +723,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
         circulatingSupply: null,
         circulatingSupplyRaw: null,
         poolBalance: null,
+        flags: null,
       }
     }
 
@@ -734,6 +768,14 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
     // Do not manufacture a holder count and do not crawl all accounts here.
     const holders: number | null = null
 
+    const flags = asset.flags && typeof asset.flags === "object"
+      ? {
+          authRequired: typeof asset.flags.auth_required === "boolean" ? asset.flags.auth_required : null,
+          authRevocable: typeof asset.flags.auth_revocable === "boolean" ? asset.flags.auth_revocable : null,
+          authClawbackEnabled: typeof asset.flags.auth_clawback_enabled === "boolean" ? asset.flags.auth_clawback_enabled : null,
+        }
+      : null
+
     const poolBalanceRaw = Number.parseFloat(String(asset.liquidity_pools_amount ?? ""))
     const poolBalance = Number.isFinite(poolBalanceRaw)
       ? poolBalanceRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
@@ -745,6 +787,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       circulatingSupply,
       circulatingSupplyRaw: Number.isFinite(circulatingSupplyRaw) ? circulatingSupplyRaw : null,
       poolBalance,
+      flags,
     }
   } catch (error) {
     console.error("Error fetching token asset data:", error)
@@ -829,6 +872,7 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
     circulatingSupply: assetRecord.circulatingSupply,
     poolBalance: assetRecord.poolBalance,
     marketCap: marketCapValue != null ? marketCapValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null,
+    flags: assetRecord.flags,
     poolId: mainPool?.pool.id || null,
     athPrice: athValue != null ? athValue.toFixed(6) : null,
     atlPrice: atlValue != null ? atlValue.toFixed(6) : null,
@@ -1817,38 +1861,28 @@ export interface OrderBookData {
   asks: OrderBookLevel[]
 }
 
-export async function getOrderBook(assetCode: string, assetIssuer: string): Promise<OrderBookData> {
-  const empty = { bestBid: null, bestAsk: null, spread: null, bids: [], asks: [] }
+async function getOrderBookWithStatus(assetCode: string, assetIssuer: string): Promise<{ data: OrderBookData; status: TokenSnapshotFieldStatus }> {
+  const empty: OrderBookData = { bestBid: null, bestAsk: null, spread: null, bids: [], asks: [] }
   try {
     const assetType = assetCode.length > 4 ? "credit_alphanum12" : "credit_alphanum4"
     const url = `${PI_HORIZON_URL}/order_book?selling_asset_type=${assetType}&selling_asset_code=${encodeURIComponent(assetCode)}&selling_asset_issuer=${encodeURIComponent(assetIssuer)}&buying_asset_type=native&limit=10`
     const response: any = await fetch(url, { next: { revalidate: 30 } })
-    if (!response.ok) return empty
+    if (!response.ok) return { data: empty, status: "error" }
     const data: any = await response.json()
-    const bids = (data.bids || []).slice(0, 5).map((level: any) => ({
-      price: Number.parseFloat(level.price).toFixed(6),
-      amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }),
-    }))
-    const asks = (data.asks || []).slice(0, 5).map((level: any) => ({
-      price: Number.parseFloat(level.price).toFixed(6),
-      amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }),
-    }))
+    const bids = (data.bids || []).slice(0, 5).map((level: any) => ({ price: Number.parseFloat(level.price).toFixed(6), amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }) }))
+    const asks = (data.asks || []).slice(0, 5).map((level: any) => ({ price: Number.parseFloat(level.price).toFixed(6), amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }) }))
     const bestBid = bids[0] ? Number.parseFloat(bids[0].price) : null
     const bestAsk = asks[0] ? Number.parseFloat(asks[0].price) : null
-    const spread = bestBid != null && bestAsk != null && bestBid > 0
-      ? `${(((bestAsk - bestBid) / bestBid) * 100).toFixed(2)}%`
-      : null
-    return {
-      bestBid: bestBid != null ? `${bestBid.toFixed(6)} π` : null,
-      bestAsk: bestAsk != null ? `${bestAsk.toFixed(6)} π` : null,
-      spread,
-      bids,
-      asks,
-    }
+    const spread = bestBid != null && bestAsk != null && bestBid > 0 ? `${(((bestAsk - bestBid) / bestBid) * 100).toFixed(2)}%` : null
+    return { data: { bestBid: bestBid != null ? `${bestBid.toFixed(6)} π` : null, bestAsk: bestAsk != null ? `${bestAsk.toFixed(6)} π` : null, spread, bids, asks }, status: "ok" }
   } catch (error) {
     console.error("Error fetching order book:", error)
-    return empty
+    return { data: empty, status: "error" }
   }
+}
+
+export async function getOrderBook(assetCode: string, assetIssuer: string): Promise<OrderBookData> {
+  return (await getOrderBookWithStatus(assetCode, assetIssuer)).data
 }
 
 
@@ -1895,5 +1929,37 @@ export async function getIssuerCurrencyMetadata(assetCode: string, assetIssuer: 
   } catch (error) {
     console.error("Error fetching issuer currency metadata:", error)
     return empty
+  }
+}
+
+function snapshotStatus(value: unknown): TokenSnapshotFieldStatus {
+  return value === null || value === undefined ? "unavailable" : "ok"
+}
+
+export async function getTokenSnapshot(assetCode: string, assetIssuer: string): Promise<TokenSnapshotData> {
+  const [details, orderBookResult, metadata] = await Promise.all([
+    getTokenDetails(assetCode, assetIssuer),
+    getOrderBookWithStatus(assetCode, assetIssuer),
+    getIssuerCurrencyMetadata(assetCode, assetIssuer),
+  ])
+  return {
+    ...details,
+    orderBook: orderBookResult.data,
+    metadata,
+    updatedAt: new Date().toISOString(),
+    status: {
+      price: snapshotStatus(details.price),
+      supply: snapshotStatus(details.circulatingSupply),
+      trustlines: snapshotStatus(details.trustlines),
+      holders: snapshotStatus(details.holders),
+      poolBalance: snapshotStatus(details.poolBalance),
+      marketCap: snapshotStatus(details.marketCap),
+      volume24h: snapshotStatus(details.volume24h),
+      atlPrice: snapshotStatus(details.atlPrice),
+      athPrice: snapshotStatus(details.athPrice),
+      flags: snapshotStatus(details.flags),
+      orderBook: orderBookResult.status,
+      metadata: metadata.image || metadata.desc ? "ok" : "unavailable",
+    },
   }
 }
