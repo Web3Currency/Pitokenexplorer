@@ -800,7 +800,19 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
     totalLiquidity += p.piAmount
   })
 
-  const assetRecord = await fetchOfficialAssetRecord(assetCode, assetIssuer)
+  const [assetRecord, priceHistory, volume24h] = await Promise.all([
+    fetchOfficialAssetRecord(assetCode, assetIssuer),
+    getTokenPriceHistory(assetCode, assetIssuer),
+    mainPool ? sumPoolPiVolume24h(mainPool.pool.id) : Promise.resolve(null),
+  ])
+
+  const historyPrices = (["24h", "7d", "30d"] as const)
+    .flatMap((range) => priceHistory[range])
+    .map((point) => Number.parseFloat(String(point.pricePI)))
+    .filter((value) => Number.isFinite(value) && value > 0)
+
+  const athValue = historyPrices.length > 0 ? Math.max(...historyPrices) : null
+  const atlValue = historyPrices.length > 0 ? Math.min(...historyPrices) : null
 
   const marketCapValue =
     price != null && assetRecord.circulatingSupplyRaw != null
@@ -818,9 +830,9 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
     poolBalance: assetRecord.poolBalance,
     marketCap: marketCapValue != null ? marketCapValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null,
     poolId: mainPool?.pool.id || null,
-    athPrice: null,
-    atlPrice: null,
-    volume24h: mainPool ? await sumPoolPiVolume24h(mainPool.pool.id) : null,
+    athPrice: athValue != null ? athValue.toFixed(6) : null,
+    atlPrice: atlValue != null ? atlValue.toFixed(6) : null,
+    volume24h,
   }
 
   // Cache with PRICES TTL (shorter) since price is the most time-sensitive
