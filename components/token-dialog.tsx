@@ -92,7 +92,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
         {[
           { label: "24h volume", value: (displayToken as any)?.volume24h ? `${(displayToken as any).volume24h} π` : "—" },
           { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
-          { label: "Trustlines", value: String(displayToken?.trustlines ?? 0) },
+          { label: "Trustlines", value: displayToken?.trustlines != null ? String(displayToken.trustlines) : "—" },
           { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },
           { label: "All-time high", value: athPrice ? `${athPrice} π` : "—" },
           { label: "All-time low", value: atlPrice ? `${atlPrice} π` : "—" },
@@ -105,8 +105,8 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
       </div>
 
       <div className="rounded-xl bg-muted p-3">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Issuer flags</div>
-        <div className="mt-1 text-sm font-semibold">{(displayToken as any)?.issuerFlags || "—"}</div>
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Market cap</div>
+        <div className="mt-1 text-sm font-semibold">{(displayToken as any)?.marketCap ? `${(displayToken as any).marketCap} π` : "—"}</div>
       </div>
 
       <section className="space-y-3">
