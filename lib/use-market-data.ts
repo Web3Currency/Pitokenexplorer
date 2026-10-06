@@ -171,11 +171,11 @@ interface TokenDetailsResponse {
   holders: number
   circulatingSupply: string | null
   poolBalance?: string | null
-  issuerFlags?: string | null
   poolId: string | null
   athPrice?: string | null
   atlPrice?: string | null
   volume24h?: string | null
+  marketCap?: string | null
 }
 
 export function useTokenDetails(assetCode: string | null, issuer: string | null) {
