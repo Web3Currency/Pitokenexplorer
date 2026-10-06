@@ -608,7 +608,7 @@ export function ExploreSection() {
                           <img
                             src={(token as any).logoUrl || "/placeholder.svg"}
                             alt={token.symbol}
-                            className="w-10 h-10 rounded-full object-cover shrink-0"
+                            className="w-10 h-10 rounded-full object-cover shrink-0 bg-orange-500"
                             onError={(e) => {
                               // If admin logo fails to load, show placeholder
                               e.currentTarget.style.display = 'none'
@@ -617,7 +617,7 @@ export function ExploreSection() {
                           />
                         ) : null}
                         <div 
-                          className={`flex items-center justify-center w-10 h-10 rounded-full bg-muted text-muted-foreground text-xl shrink-0 ${(token as any).logoUrl ? 'hidden' : ''}`}
+                          className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white text-xl shrink-0 ${(token as any).logoUrl ? 'hidden' : ''}`}
                         >
                           {token.symbol[0]}
                         </div>
@@ -634,7 +634,7 @@ export function ExploreSection() {
                           <div className="text-xs text-muted-foreground truncate">{token.issuer}</div>
                         </div>
                         <div className="text-right flex flex-col items-end">
-                          <div className="text-sm font-semibold">{token.price ? `${token.price} π` : null}</div>
+                          <div className="text-sm font-semibold text-orange-600 dark:text-orange-400">{token.price ? `${token.price} π` : null}</div>
                           <div className="flex items-center justify-end">
                             {rankMovement === "up" ? (
                               <ArrowUp className="h-3.5 w-3.5 text-green-500" />
