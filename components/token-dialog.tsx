@@ -16,8 +16,8 @@ function TokenDetailsSkeleton() {
           <div className="space-y-2 text-right"><div className="ml-auto h-3 w-20 animate-pulse rounded bg-background/50" /><div className="ml-auto h-7 w-28 animate-pulse rounded bg-background/70" /></div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div>
-      <div className="space-y-3"><div className="h-4 w-24 animate-pulse rounded bg-muted" /><div className="grid grid-cols-3 gap-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}</div><div className="grid grid-cols-2 gap-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="space-y-2"><div className="h-3 w-10 animate-pulse rounded bg-muted" />{Array.from({ length: 3 }).map((_, j) => <div key={j} className="h-9 animate-pulse rounded-lg bg-muted" />)}</div>)}</div></div>
+      <div className="grid grid-cols-2 gap-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="flex h-16 flex-col items-center justify-center gap-2 rounded-xl bg-muted"><div className="h-3 w-16 animate-pulse rounded bg-background/50" /><div className="h-4 w-20 animate-pulse rounded bg-background/70" /></div>)}</div>
+      <div className="space-y-3"><div className="h-4 w-24 animate-pulse rounded bg-muted" /><div className="grid grid-cols-3 gap-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="flex h-16 flex-col items-center justify-center gap-2 rounded-xl bg-muted"><div className="h-3 w-14 animate-pulse rounded bg-background/50" /><div className="h-4 w-16 animate-pulse rounded bg-background/70" /></div>)}</div><div className="grid grid-cols-2 gap-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="space-y-2"><div className="flex justify-center"><div className="h-3 w-10 animate-pulse rounded bg-muted" /></div>{Array.from({ length: 3 }).map((_, j) => <div key={j} className="h-9 animate-pulse rounded-lg bg-muted" />)}</div>)}</div></div>
     </div>
   )
 }
@@ -79,7 +79,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           { label: "All-time low", value: (displayToken as any)?.atlPrice ? String((displayToken as any).atlPrice) + " π" : "—" },
           { label: "All-time high", value: (displayToken as any)?.athPrice ? String((displayToken as any).athPrice) + " π" : "—" },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl bg-muted p-3">
+          <div key={stat.label} className="rounded-xl bg-muted p-3 text-center">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
             <div className="mt-1 truncate text-sm font-semibold">{stat.value}</div>
           </div>
@@ -94,7 +94,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
             ["Best ask", orderBook?.bestAsk],
             ["Spread", orderBook?.spread],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl bg-muted p-3">
+            <div key={label} className="rounded-xl bg-muted p-3 text-center">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
               <div className="mt-1 truncate text-sm font-semibold">{bookLoading ? "..." : value || "—"}</div>
             </div>
@@ -102,7 +102,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground">Bids</p>
+            <p className="text-center text-xs font-semibold text-muted-foreground">Bids</p>
             {(orderBook?.bids || []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No bids</p>
             ) : (
@@ -115,7 +115,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
             )}
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground">Asks</p>
+            <p className="text-center text-xs font-semibold text-muted-foreground">Asks</p>
             {(orderBook?.asks || []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No asks</p>
             ) : (
