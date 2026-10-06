@@ -72,7 +72,6 @@ export function getCache<T>(key: string): T | null {
 
   const now = Date.now()
   if (now >= entry.expiresAt) {
-    cache.delete(key)
     return null
   }
 
@@ -97,6 +96,10 @@ export function setCache<T>(key: string, data: T, ttl: number): void {
     timestamp: now,
     expiresAt: now + ttl,
   })
+}
+
+export function getStaleCache<T>(key: string): T | null {
+  return cache.get(key)?.data as T | null
 }
 
 export function isCacheValid(key: string): boolean {
