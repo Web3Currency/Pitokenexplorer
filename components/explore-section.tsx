@@ -106,22 +106,6 @@ function UnifiedStatsCard({
               </MobileTooltip>
             </div>
             <div className="text-lg font-bold">{formatValue(stats.liquidity)}</div>
-            <div
-              className={`text-xs font-semibold flex items-center gap-1 mt-1 ${getChangeColor(stats.volume24hChange)}`}
-            >
-              {isDeferredLoading ? (
-                <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" />
-              ) : stats.volume24hChange ? (
-                <>
-                  {Number.parseFloat(stats.volume24hChange) >= 0 ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3" />
-                  )}
-                  {stats.volume24hChange}
-                </>
-              ) : null}
-            </div>
           </button>
 
           <button
@@ -135,7 +119,6 @@ function UnifiedStatsCard({
               </MobileTooltip>
             </div>
             <div className="text-lg font-bold">{formatValue(stats.tokenCount)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Live Tokens</div>
           </button>
         </div>
       </div>
