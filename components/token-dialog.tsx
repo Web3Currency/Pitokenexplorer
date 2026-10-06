@@ -36,7 +36,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
   const { data: snapshot, isLoading: snapshotLoading } = useTokenSnapshot(assetCode, issuer)
   const [logoFailed, setLogoFailed] = useState(false)
   const displayToken = { ...token, ...(snapshot || {}) }
-  const orderBook = snapshot?.orderBook
+  const orderBook = snapshot?.orderBook ?? { bestBid: null, bestAsk: null, spread: null, bids: [], asks: [] }
   const orderBookUnavailable = snapshot?.status.orderBook === "error" || snapshot?.status.orderBook === "unavailable"
 
   if (snapshotLoading && !snapshot) return <TokenDetailsSkeleton />
@@ -72,6 +72,10 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           </div>
         </div>
       </div>
+
+      {snapshot?.metadata.desc && (
+        <p className="px-1 text-sm leading-6 text-muted-foreground">{snapshot.metadata.desc}</p>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         {[
