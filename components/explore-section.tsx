@@ -120,9 +120,7 @@ function UnifiedStatsCard({
                   )}
                   {stats.volume24hChange}
                 </>
-              ) : (
-                
-              )}
+              ) : null}
             </div>
           </button>
 
