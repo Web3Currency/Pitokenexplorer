@@ -34,7 +34,7 @@ export interface Token {
   volume: string
   circulatingSupply?: string | null
   trustlines?: number | null
-  holders: string
+  holders: number | null
   liquidity: string
   verified: boolean
   icon: string
