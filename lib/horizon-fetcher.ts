@@ -6,7 +6,7 @@
  * - Correct price calculation from Token/PI pools only
  */
 
-import { getCache, setCache, CACHE_TTL, CACHE_KEYS, getCacheTimestamp } from "./server-cache"
+import { getCache, getStaleCache, setCache, CACHE_TTL, CACHE_KEYS, getCacheTimestamp } from "./server-cache"
 
 export { CACHE_KEYS, getCacheTimestamp }
 
@@ -137,21 +137,27 @@ export async function fetchCachedPools(): Promise<PoolData[]> {
   let allRecords: PoolData[] = []
   let url: string | null = `${PI_HORIZON_URL}/liquidity_pools?limit=${PAGINATION_LIMITS.POOLS_PER_PAGE}&order=desc`
   let pageCount = 0
+  let refreshFailed = false
 
   while (url && pageCount < PAGINATION_LIMITS.POOLS_MAX_PAGES) {
     try {
       const response: any = await fetch(url, {
-        next: { revalidate: 900 }, // 15 min revalidation hint
+        next: { revalidate: 900 },
       })
-      if (!response.ok) break
+      if (!response.ok) {
+        refreshFailed = true
+        break
+      }
 
       const data: any = await response.json()
       const records = data._embedded?.records ?? []
-      if (records.length === 0) break
+      if (records.length === 0) {
+        refreshFailed = true
+        break
+      }
 
       allRecords = [...allRecords, ...records]
 
-      // Only continue if we got a full page and have more pages
       if (records.length < PAGINATION_LIMITS.POOLS_PER_PAGE || !data._links?.next) {
         break
       }
@@ -159,13 +165,18 @@ export async function fetchCachedPools(): Promise<PoolData[]> {
       pageCount++
     } catch (error) {
       console.error("Error fetching pools page:", error)
+      refreshFailed = true
       break
     }
   }
 
-  // Cache the results
-  setCache(CACHE_KEYS.LIQUIDITY_POOLS, allRecords, CACHE_TTL.LIQUIDITY_POOLS)
+  if (refreshFailed) {
+    const lastGood = getStaleCache<PoolData[]>(CACHE_KEYS.LIQUIDITY_POOLS)
+    if (lastGood) return lastGood
+    return []
+  }
 
+  setCache(CACHE_KEYS.LIQUIDITY_POOLS, allRecords, CACHE_TTL.LIQUIDITY_POOLS)
   return allRecords
 }
 
