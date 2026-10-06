@@ -797,6 +797,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       circulatingSupply: null,
       circulatingSupplyRaw: null,
       poolBalance: null,
+      flags: null,
     }
   }
 }
