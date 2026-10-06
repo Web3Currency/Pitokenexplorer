@@ -8,7 +8,7 @@ const REFRESH_INTERVALS = {
   MARKET_STATS: 5 * 60 * 1000,
   MARKET_STATS_DEFERRED: 5 * 60 * 1000,
   PRICES: 2 * 60 * 1000,
-  TOKEN_DETAILS: 0,
+  TOKEN_DETAILS: 30 * 1000,
   POOL_VOLUME: 0,
   TOKEN_PRICE_HISTORY: 0,
 } as const
@@ -162,32 +162,26 @@ export function useTokenPrices(enabled = true) {
   })
 }
 
-interface TokenDetailsResponse {
-  id: string
-  price: string | null
-  liquidity: string | null
-  totalLiquidity?: string | null
-  trustlines: number
-  holders: number
-  circulatingSupply: string | null
-  poolBalance?: string | null
-  poolId: string | null
-  athPrice?: string | null
-  atlPrice?: string | null
-  volume24h?: string | null
-  marketCap?: string | null
+export type TokenSnapshotFieldStatus = "ok" | "unavailable" | "error"
+
+export interface TokenSnapshotResponse {
+  id: string; price: string | null; liquidity: string | null; totalLiquidity?: string | null
+  trustlines: number | null; holders: number | null; circulatingSupply: string | null
+  poolBalance?: string | null; poolId: string | null; athPrice?: string | null; atlPrice?: string | null
+  volume24h?: string | null; marketCap?: string | null
+  flags?: { authRequired: boolean | null; authRevocable: boolean | null; authClawbackEnabled: boolean | null } | null
+  orderBook: { bestBid: string | null; bestAsk: string | null; spread: string | null; bids: Array<{price:string;amount:string}>; asks: Array<{price:string;amount:string}> }
+  metadata: { image: string | null; desc: string | null; tomlUrl: string | null }
+  updatedAt: string
+  status: Record<string, TokenSnapshotFieldStatus>
 }
 
-export function useTokenDetails(assetCode: string | null, issuer: string | null) {
+export function useTokenSnapshot(assetCode: string | null, issuer: string | null) {
   const shouldFetch = Boolean(assetCode && issuer)
-  return useSWR<TokenDetailsResponse>(
-    shouldFetch ? `/api/explorer/tokens/${assetCode}/details?issuer=${issuer}` : null,
+  return useSWR<TokenSnapshotResponse>(
+    shouldFetch ? `/api/explorer/tokens/${encodeURIComponent(assetCode!)}/snapshot?issuer=${encodeURIComponent(issuer!)}` : null,
     fetcher,
-    {
-      ...baseSwrConfig,
-      refreshInterval: REFRESH_INTERVALS.TOKEN_DETAILS,
-      revalidateOnMount: true,
-    },
+    { ...baseSwrConfig, refreshInterval: REFRESH_INTERVALS.TOKEN_DETAILS, revalidateOnMount: true, keepPreviousData: true },
   )
 }
 
