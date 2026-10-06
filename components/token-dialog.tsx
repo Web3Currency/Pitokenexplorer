@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Copy, Loader2 } from "lucide-react"
 import type { Token } from "@/lib/mock-data"
-import { useTokenDetails, useOrderBook, useTokenMetadata } from "@/lib/use-market-data"
+import { useTokenSnapshot } from "@/lib/use-market-data"
 
 function TokenDetailsSkeleton() {
   return (
@@ -16,6 +16,8 @@ function TokenDetailsSkeleton() {
           <div className="space-y-2 text-right"><div className="ml-auto h-3 w-20 animate-pulse rounded bg-background/50" /><div className="ml-auto h-7 w-28 animate-pulse rounded bg-background/70" /></div>
         </div>
       </div>
+      {snapshot?.metadata.desc && <p className="px-1 text-sm leading-6 text-muted-foreground">{snapshot.metadata.desc}</p>}
+
       <div className="grid grid-cols-2 gap-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="flex h-16 flex-col items-center justify-center gap-2 rounded-xl bg-muted"><div className="h-3 w-16 animate-pulse rounded bg-background/50" /><div className="h-4 w-20 animate-pulse rounded bg-background/70" /></div>)}</div>
       <div className="space-y-3"><div className="h-4 w-24 animate-pulse rounded bg-muted" /><div className="grid grid-cols-3 gap-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="flex h-16 flex-col items-center justify-center gap-2 rounded-xl bg-muted"><div className="h-3 w-14 animate-pulse rounded bg-background/50" /><div className="h-4 w-16 animate-pulse rounded bg-background/70" /></div>)}</div><div className="grid grid-cols-2 gap-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="space-y-2"><div className="flex justify-center"><div className="h-3 w-10 animate-pulse rounded bg-muted" /></div>{Array.from({ length: 3 }).map((_, j) => <div key={j} className="h-9 animate-pulse rounded-lg bg-muted" />)}</div>)}</div></div>
     </div>
@@ -33,18 +35,13 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
     verified: false,
   } as unknown as Token
 
-  const { data: tokenDetails, isLoading: detailsLoading } = useTokenDetails(assetCode, issuer)
-  const { data: metadata } = useTokenMetadata(assetCode, issuer)
+  const { data: snapshot, isLoading: snapshotLoading } = useTokenSnapshot(assetCode, issuer)
   const [logoFailed, setLogoFailed] = useState(false)
+  const displayToken = { ...token, ...(snapshot || {}) }
+  const orderBook = snapshot?.orderBook
+  const orderBookUnavailable = snapshot?.status.orderBook === "error" || snapshot?.status.orderBook === "unavailable"
 
-  const { data: orderBook, isLoading: bookLoading } = useOrderBook(assetCode, issuer) as {
-    data?: any
-    isLoading: boolean
-  }
-
-  const displayToken = { ...token, ...(tokenDetails || {}) }
-
-  if (detailsLoading && !tokenDetails) return <TokenDetailsSkeleton />
+  if (snapshotLoading && !snapshot) return <TokenDetailsSkeleton />
 
   return (
     <div className="space-y-4 pb-10">
@@ -56,9 +53,11 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
       <div className="rounded-xl bg-muted px-4 py-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="flex min-w-0 items-center gap-3 text-left">
-            {metadata?.image && !logoFailed ? (
-              <img src={metadata.image} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" onError={() => setLogoFailed(true)} />
-            ) : null}
+            {snapshot?.metadata.image && !logoFailed ? (
+              <img src={snapshot.metadata.image} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" onError={() => setLogoFailed(true)} />
+            ) : (
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background text-lg font-semibold text-muted-foreground">{assetCode[0] || "?"}</div>
+            )}
             <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold">{assetCode}</h1>
             <button type="button" onClick={() => { if (!issuer) return; navigator.clipboard.writeText(issuer); setCopied(true); setTimeout(() => setCopied(false), 1500) }} disabled={!issuer} className="mt-2 inline-flex max-w-full items-center gap-2 text-xs text-muted-foreground disabled:cursor-default">
@@ -71,7 +70,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           <div className="shrink-0 text-right">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Current price</div>
             <div className="mt-1 text-2xl font-bold tabular-nums">{displayToken?.price ? `${displayToken.price} π` : "—"}</div>
-            {detailsLoading && <Loader2 className="ml-auto mt-2 h-4 w-4 animate-spin text-muted-foreground" />}
+            {snapshotLoading && <Loader2 className="ml-auto mt-2 h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
         </div>
       </div>
@@ -104,14 +103,14 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl bg-muted p-3 text-center">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-              <div className="mt-1 truncate text-sm font-semibold">{bookLoading ? "..." : value || "—"}</div>
+              <div className="mt-1 truncate text-sm font-semibold">{orderBookUnavailable ? "Unavailable" : value || "—"}</div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
             <p className="text-center text-xs font-semibold text-muted-foreground">Bids</p>
-            {(orderBook?.bids || []).length === 0 ? (
+            {orderBookUnavailable ? <p className="text-sm text-muted-foreground">Unavailable</p> : (orderBook?.bids || []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No bids</p>
             ) : (
               orderBook.bids.map((level: any) => (
@@ -124,7 +123,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           </div>
           <div className="space-y-2">
             <p className="text-center text-xs font-semibold text-muted-foreground">Asks</p>
-            {(orderBook?.asks || []).length === 0 ? (
+            {orderBookUnavailable ? <p className="text-sm text-muted-foreground">Unavailable</p> : (orderBook?.asks || []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No asks</p>
             ) : (
               orderBook.asks.map((level: any) => (
