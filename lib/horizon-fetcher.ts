@@ -7,6 +7,7 @@
  */
 
 import { getCache, getStaleCache, setCache, CACHE_TTL, CACHE_KEYS, getCacheTimestamp } from "./server-cache"
+import { formatAssetAmount } from "./asset-precision"
 
 export { CACHE_KEYS, getCacheTimestamp }
 
@@ -344,14 +345,14 @@ export async function getProcessedPools(): Promise<ProcessedPool[]> {
         tokenIssuer: t.issuer,
         title: `${t.code} Pools`,
         mainPair: `${t.code}/PI`,
-        tvl: totalTVL.toLocaleString(),
-        totalLockedAsset: totalLockedAsset.toLocaleString(),
-        liquidity: mainPoolLiquidity ? mainPoolLiquidity.toLocaleString() : null,
-        price: price ? price.toFixed(4) : null,
+        tvl: formatAssetAmount(totalTVL),
+        totalLockedAsset: formatAssetAmount(totalLockedAsset),
+        liquidity: mainPoolLiquidity > 0 ? formatAssetAmount(mainPoolLiquidity) : null,
+        price: price != null ? formatAssetAmount(price) : null,
         volume24h: null,
         providers: totalProviders,
         fee: mainPool?.fee_bp != null ? `${(mainPool.fee_bp / 100).toFixed(2)}%` : null,
-        totalShares: mainPool?.total_shares ? Number.parseFloat(mainPool.total_shares).toLocaleString() : null,
+        totalShares: mainPool?.total_shares ? formatAssetAmount(mainPool.total_shares) : null,
         lastActive: mainPool?.last_modified_time ? new Date(mainPool.last_modified_time).toLocaleString() : null,
         allPools: allTokenPools.map((p) => {
           const reserves = p.reserves
@@ -369,7 +370,7 @@ export async function getProcessedPools(): Promise<ProcessedPool[]> {
             }
 
             if (reserve.asset === `${t.code}:${t.issuer}`) {
-              lockedAmount = Number.parseFloat(reserve.amount).toLocaleString()
+              lockedAmount = formatAssetAmount(reserve.amount)
             }
           })
 
@@ -510,7 +511,7 @@ export async function getMarketStatsInstant(): Promise<MarketStatsInstant> {
       largestPoolTvl = piLiquidity
       const displaySymbol = assetReserve ? assetReserve.asset.split(":")[0] : ""
       largestPoolPair = displaySymbol ? `${displaySymbol}/PI` : "PI/PI"
-      largestPoolLiquidity = piLiquidity.toLocaleString()
+      largestPoolLiquidity = formatAssetAmount(piLiquidity)
     }
 
     pool.reserves.forEach((r) => {
@@ -519,7 +520,7 @@ export async function getMarketStatsInstant(): Promise<MarketStatsInstant> {
   })
 
   const stats: MarketStatsInstant = {
-    liquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() + " π" : "0 π",
+    liquidity: totalLiquidity > 0 ? `${formatAssetAmount(totalLiquidity)} π` : "0.0000000 π",
     tokenCount: totalTokens.size,
     poolCount: uniquePoolPairs.size,
     largestPool: largestPoolPair || "—",
@@ -602,7 +603,7 @@ export async function getMarketStatsFull(): Promise<MarketStatsData> {
       largestPoolTvl = piLiquidity
       const displaySymbol = assetReserve ? assetReserve.asset.split(":")[0] : ""
       largestPoolPair = displaySymbol ? `${displaySymbol}/PI` : "PI/PI"
-      largestPoolLiquidity = piLiquidity.toLocaleString()
+      largestPoolLiquidity = formatAssetAmount(piLiquidity)
     }
 
     pool.reserves.forEach((r) => {
@@ -615,7 +616,7 @@ export async function getMarketStatsFull(): Promise<MarketStatsData> {
   const totalVolume24h = await calculateTotalVolume24h(pools)
 
   const stats: MarketStatsData = {
-    liquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() + " π" : "0 π",
+    liquidity: totalLiquidity > 0 ? `${formatAssetAmount(totalLiquidity)} π` : "0.0000000 π",
     liquidityChange: liquidityChange,
     totalVolume24h,
     volume24hChange: volume24hChange,
@@ -770,7 +771,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
       ? balanceValues.reduce((sum, value) => sum + value, 0)
       : null
     const circulatingSupply = circulatingSupplyRaw != null
-      ? circulatingSupplyRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      ? formatAssetAmount(circulatingSupplyRaw)
       : null
 
     // Horizon's /assets response already contains the trustline/account count.
@@ -807,7 +808,7 @@ async function fetchOfficialAssetRecord(assetCode: string, assetIssuer: string):
 
     const poolBalanceRaw = Number.parseFloat(String(asset.liquidity_pools_amount ?? ""))
     const poolBalance = Number.isFinite(poolBalanceRaw)
-      ? poolBalanceRaw.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      ? formatAssetAmount(poolBalanceRaw)
       : null
 
     return {
@@ -901,18 +902,18 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
 
   const result: TokenDetailsData = {
     id: `${assetCode}:${assetIssuer}`,
-    price: price ? price.toFixed(4) : null,
+    price: price != null ? formatAssetAmount(price) : null,
     liquidity: mainPoolLiquidity > 0 ? mainPoolLiquidity.toLocaleString() : null,
-    totalLiquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() : null,
+    totalLiquidity: totalLiquidity > 0 ? formatAssetAmount(totalLiquidity) : null,
     trustlines: assetRecord.trustlines,
     holders: assetRecord.holders,
     circulatingSupply: assetRecord.circulatingSupply,
     poolBalance: assetRecord.poolBalance,
-    marketCap: marketCapValue != null ? marketCapValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) : null,
+    marketCap: marketCapValue != null ? formatAssetAmount(marketCapValue) : null,
     flags: assetRecord.flags,
     poolId: mainPool?.pool.id || null,
-    athPrice: athValue != null ? athValue.toFixed(6) : null,
-    atlPrice: atlValue != null ? atlValue.toFixed(6) : null,
+    athPrice: athValue != null ? formatAssetAmount(athValue) : null,
+    atlPrice: atlValue != null ? formatAssetAmount(atlValue) : null,
     volume24h,
   }
 
@@ -982,9 +983,9 @@ export async function getAllTokenPrices(): Promise<
     })
 
     result[assetKey] = {
-      price: price ? price.toFixed(4) : null,
-      liquidity: mainLiquidity > 0 ? mainLiquidity.toLocaleString() : null,
-      totalLiquidity: totalLiquidity > 0 ? totalLiquidity.toLocaleString() : null,
+      price: price != null ? formatAssetAmount(price) : null,
+      liquidity: mainLiquidity > 0 ? formatAssetAmount(mainLiquidity) : null,
+      totalLiquidity: totalLiquidity > 0 ? formatAssetAmount(totalLiquidity) : null,
     }
   }
 
@@ -1577,7 +1578,7 @@ async function sumPoolPiVolume24h(poolId: string): Promise<string | null> {
   }
 
   if (!sawTrade) return "0"
-  return volume.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  return formatAssetAmount(volume)
 }
 
 async function calculateTotalVolume24h(pools: PoolData[]): Promise<string | null> {
@@ -1596,7 +1597,7 @@ async function calculateTotalVolume24h(pools: PoolData[]): Promise<string | null
     total += amount
   }
   if (!saw) return null
-  return `${total.toLocaleString(undefined, { maximumFractionDigits: 2 })} π`
+  return `${formatAssetAmount(total)} π`
 }
 
 async function calculateVolume24hChange(pools: PoolData[]): Promise<string | null> {
@@ -1906,12 +1907,12 @@ async function getOrderBookWithStatus(assetCode: string, assetIssuer: string): P
     const response: any = await fetchHorizon(url, { next: { revalidate: 30 } })
     if (!response.ok) return { data: empty, status: "error" }
     const data: any = await response.json()
-    const bids = (data.bids || []).slice(0, 5).map((level: any) => ({ price: Number.parseFloat(level.price).toFixed(6), amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }) }))
-    const asks = (data.asks || []).slice(0, 5).map((level: any) => ({ price: Number.parseFloat(level.price).toFixed(6), amount: Number.parseFloat(level.amount).toLocaleString(undefined, { maximumFractionDigits: 2 }) }))
+    const bids = (data.bids || []).slice(0, 5).map((level: any) => ({ price: formatAssetAmount(level.price), amount: formatAssetAmount(level.amount) }))
+    const asks = (data.asks || []).slice(0, 5).map((level: any) => ({ price: formatAssetAmount(level.price), amount: formatAssetAmount(level.amount) }))
     const bestBid = bids[0] ? Number.parseFloat(bids[0].price) : null
     const bestAsk = asks[0] ? Number.parseFloat(asks[0].price) : null
     const spread = bestBid != null && bestAsk != null && bestBid > 0 ? `${(((bestAsk - bestBid) / bestBid) * 100).toFixed(2)}%` : null
-    return { data: { bestBid: bestBid != null ? `${bestBid.toFixed(6)} π` : null, bestAsk: bestAsk != null ? `${bestAsk.toFixed(6)} π` : null, spread, bids, asks }, status: "ok" }
+    return { data: { bestBid: bestBid != null ? `${formatAssetAmount(bestBid)} π` : null, bestAsk: bestAsk != null ? `${formatAssetAmount(bestAsk)} π` : null, spread, bids, asks }, status: "ok" }
   } catch (error) {
     console.error("Error fetching order book:", error)
     return { data: empty, status: "error" }
