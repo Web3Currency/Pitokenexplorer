@@ -19,7 +19,7 @@ async function supabaseCount(view: string, params: Record<string, string | numbe
   })
   if (!response.ok) throw new Error(`Supabase ${view} count request failed: ${response.status}`)
   const contentRange = response.headers.get("content-range")
-  const match = contentRange?.match(/\\/([0-9]+)$/)
+  const match = contentRange?.match(/\/([0-9]+)$/)
   return match ? Number(match[1]) : (await response.json()).length
 }
 async function supabaseGet<T>(view: string, params: Record<string, string | number | undefined> = {}, range?: { from: number; to: number }): Promise<T[]> {
