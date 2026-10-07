@@ -97,9 +97,19 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
         <p className="px-1 text-sm leading-6 text-muted-foreground">{snapshot.metadata.desc}</p>
       )}
 
-      <p className="px-1 text-xs text-muted-foreground" aria-live="polite">
-        {snapshot?.updatedAt && now > 0 ? formatFreshness(snapshot.updatedAt, now) : "Updated —"}
-      </p>
+      <div className="flex items-center justify-between gap-3 px-1" aria-live="polite">
+        <p className="min-w-0 text-xs text-muted-foreground">
+          {snapshot?.updatedAt && now > 0 ? formatFreshness(snapshot.updatedAt, now) : "Updated —"}
+        </p>
+        {snapshot?.poolId ? (
+          <Link
+            href={`/pool/${encodeURIComponent(snapshot.poolId)}`}
+            className="shrink-0 text-xs font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+          >
+            {assetCode} Pool
+          </Link>
+        ) : null}
+      </div>
 
       <div className="grid grid-cols-2 gap-2">
         {[
