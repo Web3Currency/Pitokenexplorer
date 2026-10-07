@@ -140,13 +140,14 @@ export async function getExplorerPools() {
   return [...grouped.values()].map(t => {
     t.piPools.sort((a:any,b:any)=>(Number(b.pi_reserve)||0)-(Number(a.pi_reserve)||0))
     const main=t.piPools[0]
-    const all=[...t.piPools,...t.otherPools]
+    const all=[...t.piPools,...t.otherPools].sort((a:any,b:any)=>(Number(b.token_reserve)||0)-(Number(a.token_reserve)||0))
+    const tokenName=all.find((p:any)=>p.name)?.name || t.code
     const totalTVL=t.piPools.reduce((s:number,p:any)=>s+(Number(p.pi_reserve)||0),0)
     const totalLocked=all.reduce((s:number,p:any)=>s+(Number(p.token_reserve)||0),0)
     const providers=t.piPools.reduce((s:number,p:any)=>s+(Number(p.providers)||0),0)
     const price=main && Number(main.token_reserve)>0 ? Number(main.pi_reserve)/Number(main.token_reserve) : null
     return {
-      id: main?.pool_id || t.id, tokenCode:t.code, tokenIssuer:t.issuer, title:`${t.code} Pools`, mainPair:`${t.code}/PI`,
+      id: main?.pool_id || t.id, tokenCode:t.code, tokenIssuer:t.issuer, title:`${tokenName} Pools`, mainPair:`${t.code}/PI`,
       tvl: totalTVL.toLocaleString(), totalLockedAsset: totalLocked.toLocaleString(),
       liquidity: main ? Number(main.pi_reserve).toLocaleString() : null,
       price: price == null ? null : price.toFixed(4), volume24h:null, providers,
