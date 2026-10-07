@@ -22,6 +22,8 @@ function TokenDetailsSkeleton() {
   )
 }
 
+function formatPiPrice(value: string | number | null | undefined): string { if (value == null || value === "") return "—"; const number = Number(value); if (!Number.isFinite(number)) return "—"; return number.toLocaleString(undefined, { maximumFractionDigits: 4 }); }
+
 function formatFreshness(updatedAt: string | undefined, now: number): string {
   if (!updatedAt) return "Updated —"
   const elapsedSeconds = Math.max(0, Math.floor((now - new Date(updatedAt).getTime()) / 1000))
@@ -78,11 +80,11 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
             )}
             <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold">{assetCode}</h1>
-            <button type="button" onClick={() => { if (!issuer) return; navigator.clipboard.writeText(issuer); setCopied(true); setTimeout(() => setCopied(false), 1500) }} disabled={!issuer} className="mt-2 inline-flex max-w-full items-center gap-2 text-xs text-muted-foreground disabled:cursor-default">
+            <div className="mt-2 flex max-w-full items-center gap-1 text-xs text-muted-foreground">
               <span className="truncate">{issuer ? `${issuer.slice(0, 4)}...${issuer.slice(-4)}` : "—"}</span>
-              {issuer && <Copy className="h-3.5 w-3.5 shrink-0" />}
-              {issuer && <span>{copied ? "Copied" : "Copy"}</span>}
-            </button>
+              {issuer && <button type="button" onClick={() => { navigator.clipboard.writeText(issuer); setCopied(true); setTimeout(() => setCopied(false), 1500) }} aria-label={copied ? "Issuer address copied" : "Copy issuer address"} title={copied ? "Copied" : "Copy issuer address"} className="shrink-0 rounded p-0.5 hover:bg-background/60"><Copy className="h-3.5 w-3.5" /></button>}
+              
+            </div>
             </div>
           </div>
           <div className="shrink-0 text-right">
@@ -119,8 +121,9 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           { label: "Holders", value: (displayToken as any)?.holders != null ? String((displayToken as any).holders) : "—" },
           { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },
           { label: "24h volume", value: (displayToken as any)?.volume24h ? String((displayToken as any).volume24h) + " π" : "—" },
-          { label: "All-time low", value: (displayToken as any)?.atlPrice ? String((displayToken as any).atlPrice) + " π" : "—" },
-          { label: "All-time high", value: (displayToken as any)?.athPrice ? String((displayToken as any).athPrice) + " π" : "—" },
+          { label: "All-time low", value: (displayToken as any)?.atlPrice != null ? formatPiPrice((displayToken as any).atlPrice) + " π" : "—" },
+          { label: "All-time high", value: (displayToken as any)?.athPrice != null ? formatPiPrice((displayToken as any).athPrice) + " π" : "—" },
+          { label: "Orders", value: (displayToken as any)?.ordersCount != null ? Number((displayToken as any).ordersCount).toLocaleString() : "—" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl bg-muted p-3 text-center">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
@@ -145,26 +148,26 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
-            <p className="text-center text-xs font-semibold text-muted-foreground">Bids</p>
+            <p className="text-center text-xs font-semibold text-green-600 dark:text-green-400">Bids</p>
             {orderBookUnavailable ? <p className="text-sm text-muted-foreground">Unavailable</p> : (orderBook?.bids || []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No bids</p>
             ) : (
               orderBook.bids.map((level: any) => (
-                <div key={`bid-${level.price}`} className="flex justify-between rounded-lg bg-muted px-3 py-2 text-sm">
-                  <span>{level.price}</span>
+                <div key={`bid-${level.price}`} className="flex justify-between rounded-lg bg-green-500/10 px-3 py-2 text-sm">
+                  <span className="text-green-600 dark:text-green-400">{level.price}</span>
                   <span className="text-muted-foreground">{level.amount}</span>
                 </div>
               ))
             )}
           </div>
           <div className="space-y-2">
-            <p className="text-center text-xs font-semibold text-muted-foreground">Asks</p>
+            <p className="text-center text-xs font-semibold text-red-600 dark:text-red-400">Asks</p>
             {orderBookUnavailable ? <p className="text-sm text-muted-foreground">Unavailable</p> : (orderBook?.asks || []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No asks</p>
             ) : (
               orderBook.asks.map((level: any) => (
-                <div key={`ask-${level.price}`} className="flex justify-between rounded-lg bg-muted px-3 py-2 text-sm">
-                  <span>{level.price}</span>
+                <div key={`ask-${level.price}`} className="flex justify-between rounded-lg bg-red-500/10 px-3 py-2 text-sm">
+                  <span className="text-red-600 dark:text-red-400">{level.price}</span>
                   <span className="text-muted-foreground">{level.amount}</span>
                 </div>
               ))
