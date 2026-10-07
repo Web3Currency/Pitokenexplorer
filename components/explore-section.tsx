@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import {
   Search,
@@ -19,7 +19,6 @@ import {
   ChevronRight,
   ArrowDown,
   ChevronUp,
-  Globe2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -29,8 +28,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { MobileTooltip } from "@/components/ui/tooltip"
-import type { Token, Domain, MarketStats } from "@/lib/mock-data"
-import { useTokenRegistry, useLiquidityPools, useMarketStats, useTokenPrices, useDomains } from "@/lib/use-market-data"
+import type { Token, MarketStats } from "@/lib/mock-data"
+import { useTokenRegistry, useMarketStats, useTokenPrices } from "@/lib/use-market-data"
 import { useRankMovement } from "@/lib/use-rank-snapshot"
 // REMOVED: isTokenVerified import - verification is ONLY from admin metadata
 
@@ -341,25 +340,18 @@ function ListSkeleton({ rows = 6 }: { rows?: number }) {
 
 export function ExploreSection() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "market")
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null)
-  const [expandedPoolToken, setExpandedPoolToken] = useState<string | null>(null)
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [liquiditySortAsc, setLiquiditySortAsc] = useState(false)
 
   const PAGE_SIZE = 20
   const [tokenPage, setTokenPage] = useState(1)
-  const [poolPage, setPoolPage] = useState(1)
   const listContainerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
 
   const { data: tokens = [], isLoading: tokensLoading, error: tokensError } = useTokenRegistry()
-  const { data: pools = [], isLoading: poolsLoading } = useLiquidityPools()
   const { data: stats, isLoading: statsLoading, isDeferredLoading } = useMarketStats()
-  const { data: domains = [] } = useDomains()
   const { data: tokenPrices } = useTokenPrices()
   
   // Debug: Log sample token data when loaded
@@ -425,7 +417,7 @@ export function ExploreSection() {
     )
     observer.observe(hero)
     return () => observer.disconnect()
-  }, [activeTab, stats])
+  }, [stats])
 
   const scrollToTop = () => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })
@@ -493,42 +485,14 @@ export function ExploreSection() {
       }
       return liquiditySortAsc ? read(a, sortBy) - read(b, sortBy) : read(b, sortBy) - read(a, sortBy)
     })
-  }, [tokensWithPrices, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices, domains])
-
-  const filteredDomains = domains
-    .filter((domain: Domain) => (domain.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()))
-    .sort((a: Domain, b: Domain) => (liquiditySortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)))
-
-  const filteredPools = pools
-    .filter(
-      (pool: any) =>
-        (pool.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-        (pool.tokenCode?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-        (pool.mainPair?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
-    )
-    .sort((a: any, b: any) => {
-      if (sortBy === "name") {
-        const aName = String(a.tokenCode || a.title || "")
-        const bName = String(b.tokenCode || b.title || "")
-        return liquiditySortAsc ? aName.localeCompare(bName) : bName.localeCompare(aName)
-      }
-      const aTvl = Number.parseFloat(String(a.tvl ?? "0").replace(/[^\d.-]/g, "") || "0")
-      const bTvl = Number.parseFloat(String(b.tvl ?? "0").replace(/[^\d.-]/g, "") || "0")
-      return liquiditySortAsc ? aTvl - bTvl : bTvl - aTvl
-    })
+  }, [tokensWithPrices, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices])
 
   const tokenTotalPages = Math.ceil(filteredTokens.length / PAGE_SIZE)
-  const poolTotalPages = Math.ceil(filteredPools.length / PAGE_SIZE)
 
   const paginatedTokens = useMemo(() => {
     const startIndex = (tokenPage - 1) * PAGE_SIZE
     return filteredTokens.slice(startIndex, startIndex + PAGE_SIZE)
   }, [filteredTokens, tokenPage])
-
-  const paginatedPools = useMemo(() => {
-    const startIndex = (poolPage - 1) * PAGE_SIZE
-    return filteredPools.slice(startIndex, startIndex + PAGE_SIZE)
-  }, [filteredPools, poolPage])
 
 
 
@@ -539,14 +503,7 @@ export function ExploreSection() {
   }, [filteredTokens.length, tokenPage, tokenTotalPages])
 
   useEffect(() => {
-    if (poolPage > poolTotalPages && poolTotalPages > 0) {
-      setPoolPage(1)
-    }
-  }, [filteredPools.length, poolPage, poolTotalPages])
-
-  useEffect(() => {
     setTokenPage(1)
-    setPoolPage(1)
   }, [searchQuery, activeFilters])
 
   const scrollListToTop = () => {
@@ -558,38 +515,11 @@ export function ExploreSection() {
     scrollListToTop()
   }
 
-  const handlePoolPageChange = (newPage: number) => {
-    setPoolPage(newPage)
-    scrollListToTop()
-  }
-
   return (
     <div className="flex flex-col h-full">
   <div ref={scrollRef} className="flex-1 overflow-y-auto explore-scroll-container">
         <div className="min-h-full flex flex-col gap-4 p-4">
           <div ref={heroRef}><UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} /></div>
-
-          <div className="sticky top-0 z-30 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-            <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
-            {[
-              { id: "market", label: "Market" },
-              { id: "liquidityPools", label: "Liquidity Pools" },
-              { id: "domain", label: "Domain" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors relative",
-                  activeTab === tab.id ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {tab.label}
-                {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-              </button>
-            ))}
-            </div>
-          </div>
 
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -597,31 +527,16 @@ export function ExploreSection() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={
-                  activeTab === "domain"
-                    ? "Search domains..."
-                    : activeTab === "liquidityPools"
-                      ? "Search pools..."
-                      : "Search tokens..."
-                }
+                placeholder="Search tokens..."
                 className="h-11 pl-9 bg-muted border-0 shadow-none rounded-xl"
               />
             </div>
             <SortMenu
-              options={
-                activeTab === "market"
-                  ? [
-                      { key: "price", label: "Price" },
-                      { key: "liquidity", label: "Liquidity" },
-                      { key: "change24h", label: "24h Change" },
-                    ]
-                  : activeTab === "liquidityPools"
-                    ? [
-                        { key: "tvl", label: "TVL" },
-                        { key: "name", label: "Name" },
-                      ]
-                    : [{ key: "name", label: "Name" }]
-              }
+              options={[
+                { key: "price", label: "Price" },
+                { key: "liquidity", label: "Liquidity" },
+                { key: "change24h", label: "24h Change" },
+              ]}
               sortBy={sortBy}
               sortAsc={liquiditySortAsc}
               onSelect={(key, asc) => {
@@ -630,14 +545,14 @@ export function ExploreSection() {
               }}
             />          </div>
 
-          {activeTab === "market" && error ? (
+          {error ? (
             <div className="flex flex-col items-center justify-center py-12 text-destructive">
               <AlertCircle className="h-8 w-8 mb-2" />
               <p className="text-sm font-medium">{error}</p>
             </div>
           ) : (
             <>
-              {activeTab === "market" && (isLoading ? (
+              {isLoading ? (
                 <ListSkeleton />
               ) : (
                 <div className="space-y-2" ref={listContainerRef}>
@@ -718,77 +633,9 @@ export function ExploreSection() {
                     </div>
                   )}
                 </div>
-              ))}
-
-              {activeTab === "domain" && (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                  <div className="w-16 h-16 flex items-center justify-center mb-4">
-                    <Globe2 className="h-10 w-10 opacity-20" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground">Coming soon...</h3>
-                </div>
               )}
-
-              {activeTab === "liquidityPools" && (poolsLoading && pools.length === 0 ? (
-                <ListSkeleton />
-              ) : (
-                <div className="space-y-2">
-                  {paginatedPools.map((pool: any) => (
-                    <div key={pool.id} className="space-y-2">
-                      <button
-                        onClick={() => router.push(`/pool/${encodeURIComponent(pool.id)}`)}
-                        className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
-                      >
-                        <div className="flex items-center shrink-0">
-                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white text-xl">
-                            {pool.tokenCode?.[0] || "?"}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium">{pool.title || `${pool.tokenCode} Pools`}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-purple-600">{pool.tvl || null}</div>
-                          <div className="text-[10px] text-muted-foreground">TVL (PI)</div>
-                        </div>
-                      </button>
-
-                    </div>
-                  ))}
-
-                  {filteredPools.length > PAGE_SIZE && (
-                    <div className="relative flex items-center justify-between pt-4 pb-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePoolPageChange(poolPage - 1)}
-                        disabled={poolPage === 1}
-                        className="h-9 px-3 gap-1"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePoolPageChange(poolPage + 1)}
-                        disabled={poolPage === poolTotalPages}
-                        className="h-9 px-3 gap-1"
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      {showBackToTop && <BackToTopControl onClick={scrollToTop} />}
-                    </div>
-                  )}
-                  {filteredPools.length > 0 && filteredPools.length <= PAGE_SIZE && showBackToTop && (
-                    <div className="relative flex justify-center pt-4 pb-2">
-                      <BackToTopControl onClick={scrollToTop} />
-                    </div>
-                  )}
-                </div>
-              ))}
             </>
+
           )}
 
         </div>
