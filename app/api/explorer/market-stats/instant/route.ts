@@ -1,24 +1,9 @@
 import { NextResponse } from "next/server"
-import { getMarketStatsInstant } from "@/lib/horizon-fetcher"
-
+import { getExplorerStats } from "@/lib/supabase-explorer"
 export const dynamic = "force-dynamic"
-
-/**
- * Instant market stats endpoint - returns immediately without 24h calculations
- * New endpoint for non-blocking initial render
- */
 export async function GET() {
   try {
-    const stats = await getMarketStatsInstant()
-
-    return new NextResponse(JSON.stringify(stats), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=60", // 5min cache, 1min stale
-      },
-    })
-  } catch (error) {
-    console.error("Error fetching instant market stats:", error)
-    return NextResponse.json({ error: "Failed to fetch market stats" }, { status: 500 })
-  }
+    const s:any = await getExplorerStats()
+    return NextResponse.json(s ? { liquidity: Number(s.liquidity ?? 0).toLocaleString()+" π", tokenCount:s.token_count ?? 0, poolCount:s.pool_count ?? 0, largestPool:s.largest_pool ?? "—", largestPoolLiquidity:Number(s.largest_pool_liquidity ?? 0).toLocaleString(), activePools:s.active_pools ?? 0, network:s.network ?? "Testnet" } : null, { headers:{ "Cache-Control":"public, max-age=300, stale-while-revalidate=60" }})
+  } catch (error) { console.error("[explorer] Supabase instant stats failed:",error); return NextResponse.json({error:"Failed to fetch market stats"},{status:500}) }
 }
