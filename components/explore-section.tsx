@@ -66,7 +66,7 @@ function UnifiedStatsCard({
 
   if (!stats || isDeferredLoading) {
     return (
-      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-muted/30 rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border">
           <div className="p-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
@@ -254,7 +254,7 @@ function SortMenu({
         title="Sort"
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "h-11 w-11 rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
+          "h-11 w-11 rounded-xl bg-muted/30 shadow-sm flex items-center justify-center text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground",
           open && "text-primary border-primary/40",
         )}
       >
@@ -528,7 +528,7 @@ export function ExploreSection() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search tokens..."
-                className="h-11 pl-9 bg-muted border-0 shadow-none rounded-xl"
+                className="h-11 pl-9 bg-muted/30 border-0 shadow-sm rounded-xl focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
             <SortMenu
