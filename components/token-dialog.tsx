@@ -123,7 +123,6 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
           { label: "24h volume", value: (displayToken as any)?.volume24h ? String((displayToken as any).volume24h) + " π" : "—" },
           { label: "All-time low", value: (displayToken as any)?.atlPrice != null ? formatPiPrice((displayToken as any).atlPrice) + " π" : "—" },
           { label: "All-time high", value: (displayToken as any)?.athPrice != null ? formatPiPrice((displayToken as any).athPrice) + " π" : "—" },
-          { label: "Orders", value: (displayToken as any)?.ordersCount != null ? Number((displayToken as any).ordersCount).toLocaleString() : "—" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl bg-muted p-3 text-center">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
