@@ -22,6 +22,7 @@ import {
   Globe2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatAssetAmount } from "@/lib/asset-precision"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -44,16 +45,9 @@ function UnifiedStatsCard({
   const [showLiquidityDetails, setShowLiquidityDetails] = useState(false)
   const [showTokenCountDetails, setShowTokenCountDetails] = useState(false)
 
-  const formatValue = (value: string | number | undefined | null) => {
+  const formatCount = (value: string | number | undefined | null) => {
     if (value === undefined || value === null) return ""
-    const strVal = String(value).replace(/[^\d.-]/g, "")
-    const num = Number.parseFloat(strVal)
-    if (isNaN(num)) return value
-
-    if (num >= 1000000000) return (num / 1000000000).toFixed(2) + "B"
-    if (num >= 1000000) return (num / 1000000).toFixed(2) + "M"
-    if (num >= 1000) return (num / 1000).toFixed(2) + "K"
-    return value
+    return Number(value).toLocaleString()
   }
 
   const getChangeColor = (changeStr: string | null | undefined) => {
@@ -104,7 +98,7 @@ function UnifiedStatsCard({
                 <Info className="h-3 w-3 cursor-help" />
               </MobileTooltip>
             </div>
-            <div className="text-lg font-bold">{formatValue(stats.liquidity)}</div>
+            <div className="text-lg font-bold">{stats.liquidity}</div>
           </button>
 
           <button
@@ -117,7 +111,7 @@ function UnifiedStatsCard({
                 <Info className="h-3 w-3 cursor-help" />
               </MobileTooltip>
             </div>
-            <div className="text-lg font-bold">{formatValue(stats.tokenCount)}</div>
+            <div className="text-lg font-bold">{formatCount(stats.tokenCount)}</div>
           </button>
         </div>
       </div>
@@ -706,7 +700,7 @@ export function ExploreSection() {
                           <div className="text-xs text-muted-foreground truncate">{token.issuer}</div>
                         </div>
                         <div className="text-right flex flex-col items-end">
-                          <div className="text-sm font-semibold text-orange-600 dark:text-orange-400">{token.price ? `${token.price} π` : null}</div>
+                          <div className="text-sm font-semibold text-orange-600 dark:text-orange-400">{token.price ? `${formatAssetAmount(token.price)} π` : null}</div>
                           <div className="flex items-center justify-end">
                             {rankMovement === "up" ? (
                               <ArrowUp className="h-3.5 w-3.5 text-green-500" />
@@ -775,7 +769,7 @@ export function ExploreSection() {
                           <div className="text-sm font-medium">{pool.title || `${pool.tokenCode} Pools`}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-purple-600">{pool.tvl || null}</div>
+                          <div className="text-sm font-semibold text-purple-600">{pool.tvl ? `${formatAssetAmount(pool.tvl)} π` : null}</div>
                           <div className="text-[10px] text-muted-foreground">TVL (PI)</div>
                         </div>
                       </button>
