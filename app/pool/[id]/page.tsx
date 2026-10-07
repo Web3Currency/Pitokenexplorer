@@ -16,10 +16,20 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
     <div className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto w-full max-w-lg px-4 py-4">
-        <Link href="/?tab=liquidityPools" className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          Liquidity pools
-        </Link>
+        {pool ? (
+          <Link
+            href={`/token/${encodeURIComponent(pool.tokenCode)}?issuer=${encodeURIComponent(pool.tokenIssuer)}`}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {pool.tokenCode}
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </span>
+        )}
         {isLoading && !pool ? (
           <div className="mt-4">
             <PoolDetailsSkeleton />
