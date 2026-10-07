@@ -489,30 +489,38 @@ export function ExploreSection() {
 
   const tokenTotalPages = Math.ceil(filteredTokens.length / PAGE_SIZE)
 
-  const paginatedTokens = useMemo(() => {
-    const startIndex = (tokenPage - 1) * PAGE_SIZE
-    return filteredTokens.slice(startIndex, startIndex + PAGE_SIZE)
-  }, [filteredTokens, tokenPage])
-
-
-
+  // Keep pagination state valid whenever filtering/sorting changes the result set.
   useEffect(() => {
-    if (tokenPage > tokenTotalPages && tokenTotalPages > 0) {
-      setTokenPage(1)
+    if (tokenTotalPages === 0) {
+      if (tokenPage !== 1) setTokenPage(1)
+      return
     }
-  }, [filteredTokens.length, tokenPage, tokenTotalPages])
+
+    if (tokenPage > tokenTotalPages) {
+      setTokenPage(tokenTotalPages)
+    }
+  }, [tokenPage, tokenTotalPages])
 
   useEffect(() => {
     setTokenPage(1)
   }, [searchQuery, activeFilters])
 
-  const scrollListToTop = () => {
-    listContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
+  const paginatedTokens = useMemo(() => {
+    const safePage = tokenTotalPages > 0 ? Math.min(Math.max(tokenPage, 1), tokenTotalPages) : 1
+    const startIndex = (safePage - 1) * PAGE_SIZE
+    return filteredTokens.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredTokens, tokenPage, tokenTotalPages])
 
   const handleTokenPageChange = (newPage: number) => {
-    setTokenPage(newPage)
+    if (tokenTotalPages === 0) return
+    const safePage = Math.min(Math.max(newPage, 1), tokenTotalPages)
+    if (safePage === tokenPage) return
+    setTokenPage(safePage)
     scrollListToTop()
+  }
+
+  const scrollListToTop = () => {
+    listContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
   return (
@@ -607,7 +615,7 @@ export function ExploreSection() {
                     )
                   })}
 
-                  {filteredTokens.length > PAGE_SIZE && (
+                  {tokenTotalPages > 1 && (
                     <div className="relative flex items-center justify-between pt-4 pb-2">
                       <Button
                         variant="outline"
