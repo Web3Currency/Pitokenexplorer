@@ -347,7 +347,7 @@ export async function getProcessedPools(): Promise<ProcessedPool[]> {
         mainPair: `${t.code}/PI`,
         tvl: formatAssetAmount(totalTVL),
         totalLockedAsset: formatAssetAmount(totalLockedAsset),
-        liquidity: mainPoolLiquidity > 0 ? formatAssetAmount(mainPoolLiquidity) : null,
+        liquidity: mainPoolLiquidity != null && mainPoolLiquidity > 0 ? formatAssetAmount(mainPoolLiquidity) : null,
         price: price != null ? formatAssetAmount(price) : null,
         volume24h: null,
         providers: totalProviders,
