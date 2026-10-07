@@ -6,22 +6,6 @@ function getSupabaseConfig() {
 }
 
 
-async function supabaseCount(view: string, params: Record<string, string | number | undefined> = {}): Promise<number> {
-  const { url: baseUrl, key } = getSupabaseConfig()
-  const url = new URL(`${baseUrl}/rest/v1/${view}`)
-  url.searchParams.set("select", "id")
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined) url.searchParams.set(key, String(value))
-  }
-  const response = await fetch(url, {
-    headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json", Prefer: "count=exact" },
-    cache: "no-store",
-  })
-  if (!response.ok) throw new Error(`Supabase ${view} count request failed: ${response.status}`)
-  const contentRange = response.headers.get("content-range")
-  const match = contentRange?.match(/\/([0-9]+)$/)
-  return match ? Number(match[1]) : (await response.json()).length
-}
 async function supabaseGet<T>(view: string, params: Record<string, string | number | undefined> = {}, range?: { from: number; to: number }): Promise<T[]> {
   const { url: baseUrl, key } = getSupabaseConfig()
   const url = new URL(`${baseUrl}/rest/v1/${view}`)
@@ -102,7 +86,6 @@ export async function getExplorerTokenSnapshot(assetCode: string, issuer: string
   const marketRows = token.id == null ? [] : await supabaseGet<any>("explorer_market", { token_id: `eq.${token.id}`, select: "*", limit: 1 })
   const market = marketRows[0] ?? {}
   const orders = token.id == null ? [] : await supabaseGet<any>("explorer_token_orders", { token_id: `eq.${token.id}`, select: "side,price_pi,amount,total_pi,rank", order: "rank.asc", limit: 100 })
-  const orderCount = token.id == null ? 0 : await supabaseCount("explorer_token_orders", { token_id: `eq.${token.id}` })
   const bids = orders.filter((o:any) => o.side === "bid").map((o:any) => ({ price: String(o.price_pi ?? ""), amount: String(o.amount ?? "") }))
   const asks = orders.filter((o:any) => o.side === "ask").map((o:any) => ({ price: String(o.price_pi ?? ""), amount: String(o.amount ?? "") }))
   const bestBid = bids[0]?.price ?? null
@@ -121,7 +104,6 @@ export async function getExplorerTokenSnapshot(assetCode: string, issuer: string
     circulatingSupply: token.circulating_supply == null ? null : Number(token.circulating_supply).toLocaleString(),
     poolBalance: token.pool_balance == null ? null : Number(token.pool_balance).toLocaleString(),
     poolId: market.pool_id ?? main?.pool_id ?? null,
-    ordersCount: orderCount,
     athPrice: market.ath_price_pi == null ? null : Number(market.ath_price_pi).toString(),
     atlPrice: market.atl_price_pi == null ? null : Number(market.atl_price_pi).toString(),
     volume24h: market.volume_24h_pi == null ? null : Number(market.volume_24h_pi).toLocaleString(),
