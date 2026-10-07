@@ -75,31 +75,33 @@ export async function getExplorerStats() {
 }
 
 export async function getExplorerTokenSnapshot(assetCode: string, issuer: string) {
-  const tokens = await supabaseGet<any>("explorer_tokens", {
-    asset_code: `eq.${assetCode}`, asset_issuer: `eq.${issuer}`, select: "*", limit: 1,
-  })
+  const tokens = await supabaseGet<any>("explorer_tokens", { asset_code: `eq.${assetCode}`, asset_issuer: `eq.${issuer}`, select: "*", limit: 1 })
   const token = tokens[0]
   if (!token) throw new Error("Token not found")
-  const markets = await supabaseGet<any>("explorer_market", { token_id: `eq.${token.id}`, select: "*" , limit: 1 })
-  const orders = await supabaseGet<any>("explorer_token_orders", {
-    token_id: `eq.${token.id}`, select: "side,price_pi,amount,total_pi,rank", order: "rank.asc", limit: 100,
-  })
-  const market = markets[0] ?? {}
-  const bids = orders.filter(o => o.side === "bid").map(o => ({ price: String(o.price_pi ?? ""), amount: String(o.amount ?? "") }))
-  const asks = orders.filter(o => o.side === "ask").map(o => ({ price: String(o.price_pi ?? ""), amount: String(o.amount ?? "") }))
+  const pools = await supabaseGet<any>("explorer_token_pools", { asset_code: `eq.${assetCode}`, asset_issuer: `eq.${issuer}`, select: "pool_id,pair,token_reserve,pi_reserve,fee_bp,total_shares,providers,last_active_at", limit: 100 })
+  const piPools = pools.filter((p:any) => p.pi_reserve != null).sort((a:any,b:any)=>(Number(b.pi_reserve)||0)-(Number(a.pi_reserve)||0))
+  const main = piPools[0]
+  const marketRows = token.id == null ? [] : await supabaseGet<any>("explorer_market", { token_id: `eq.${token.id}`, select: "*", limit: 1 })
+  const market = marketRows[0] ?? {}
+  const orders = token.id == null ? [] : await supabaseGet<any>("explorer_token_orders", { token_id: `eq.${token.id}`, select: "side,price_pi,amount,total_pi,rank", order: "rank.asc", limit: 100 })
+  const bids = orders.filter((o:any) => o.side === "bid").map((o:any) => ({ price: String(o.price_pi ?? ""), amount: String(o.amount ?? "") }))
+  const asks = orders.filter((o:any) => o.side === "ask").map((o:any) => ({ price: String(o.price_pi ?? ""), amount: String(o.amount ?? "") }))
   const bestBid = bids[0]?.price ?? null
   const bestAsk = asks[0]?.price ?? null
   const spread = bestBid != null && bestAsk != null ? String(Number(bestAsk) - Number(bestBid)) : null
+  const derivedPrice = main && Number(main.token_reserve) > 0 ? Number(main.pi_reserve) / Number(main.token_reserve) : null
+  const derivedLiquidity = main?.pi_reserve == null ? null : Number(main.pi_reserve)
+  const derivedTotalLiquidity = piPools.reduce((sum:number,p:any)=>sum+(Number(p.pi_reserve)||0),0)
   return {
     id: `${assetCode}:${issuer}`,
-    price: market.price_pi == null ? null : Number(market.price_pi).toFixed(4),
-    liquidity: market.liquidity_pi == null ? null : Number(market.liquidity_pi).toLocaleString(),
-    totalLiquidity: market.total_liquidity_pi == null ? null : Number(market.total_liquidity_pi).toLocaleString(),
+    price: market.price_pi != null ? Number(market.price_pi).toFixed(4) : derivedPrice == null ? null : derivedPrice.toFixed(4),
+    liquidity: market.liquidity_pi != null ? Number(market.liquidity_pi).toLocaleString() : derivedLiquidity == null ? null : derivedLiquidity.toLocaleString(),
+    totalLiquidity: market.total_liquidity_pi != null ? Number(market.total_liquidity_pi).toLocaleString() : derivedTotalLiquidity.toLocaleString(),
     trustlines: token.trustlines ?? null,
     holders: token.holders ?? null,
     circulatingSupply: token.circulating_supply == null ? null : Number(token.circulating_supply).toLocaleString(),
     poolBalance: token.pool_balance == null ? null : Number(token.pool_balance).toLocaleString(),
-    poolId: market.pool_id ?? null,
+    poolId: market.pool_id ?? main?.pool_id ?? null,
     athPrice: market.ath_price_pi == null ? null : Number(market.ath_price_pi).toString(),
     atlPrice: market.atl_price_pi == null ? null : Number(market.atl_price_pi).toString(),
     volume24h: market.volume_24h_pi == null ? null : Number(market.volume_24h_pi).toLocaleString(),
@@ -108,7 +110,7 @@ export async function getExplorerTokenSnapshot(assetCode: string, issuer: string
     orderBook: { bestBid, bestAsk, spread, bids, asks },
     metadata: { image: token.image_url ?? null, desc: token.description ?? null, tomlUrl: token.toml_url ?? null },
     updatedAt: market.updated_at ?? token.updated_at ?? new Date().toISOString(),
-    status: { price: market.price_pi != null ? "ok" : "unavailable", supply: token.circulating_supply != null ? "ok" : "unavailable", trustlines: token.trustlines != null ? "ok" : "unavailable", holders: token.holders != null ? "ok" : "unavailable", poolBalance: token.pool_balance != null ? "ok" : "unavailable", marketCap: market.market_cap_pi != null ? "ok" : "unavailable", volume24h: market.volume_24h_pi != null ? "ok" : "unavailable", atlPrice: market.atl_price_pi != null ? "ok" : "unavailable", athPrice: market.ath_price_pi != null ? "ok" : "unavailable", flags: "ok", orderBook: orders.length ? "ok" : "unavailable", metadata: token.image_url || token.description ? "ok" : "unavailable" },
+    status: { price: market.price_pi != null || derivedPrice != null ? "ok" : "unavailable", supply: token.circulating_supply != null ? "ok" : "unavailable", trustlines: token.trustlines != null ? "ok" : "unavailable", holders: token.holders != null ? "ok" : "unavailable", poolBalance: token.pool_balance != null ? "ok" : "unavailable", marketCap: market.market_cap_pi != null ? "ok" : "unavailable", volume24h: market.volume_24h_pi != null ? "ok" : "unavailable", atlPrice: market.atl_price_pi != null ? "ok" : "unavailable", athPrice: market.ath_price_pi != null ? "ok" : "unavailable", flags: "ok", orderBook: orders.length ? "ok" : "unavailable", metadata: token.image_url || token.description ? "ok" : "unavailable" },
   }
 }
 
