@@ -903,7 +903,7 @@ export async function getTokenDetails(assetCode: string, assetIssuer: string): P
   const result: TokenDetailsData = {
     id: `${assetCode}:${assetIssuer}`,
     price: price != null ? formatAssetAmount(price) : null,
-    liquidity: mainPoolLiquidity > 0 ? mainPoolLiquidity.toLocaleString() : null,
+    liquidity: mainPoolLiquidity > 0 ? formatAssetAmount(mainPoolLiquidity) : null,
     totalLiquidity: totalLiquidity > 0 ? formatAssetAmount(totalLiquidity) : null,
     trustlines: assetRecord.trustlines,
     holders: assetRecord.holders,
