@@ -1,18 +1,19 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  throw new Error("Supabase explorer environment variables are not configured")
+function getSupabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  if (!url || !key) throw new Error("Supabase explorer environment variables are not configured")
+  return { url, key }
 }
 
 async function supabaseGet<T>(view: string, params: Record<string, string | number | undefined> = {}, range?: { from: number; to: number }): Promise<T[]> {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/${view}`)
+  const { url: baseUrl, key } = getSupabaseConfig()
+  const url = new URL(`${baseUrl}/rest/v1/${view}`)
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined) url.searchParams.set(key, String(value))
   }
   const headers: Record<string, string> = {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
+    apikey: key,
+    Authorization: `Bearer ${key}`,
     Accept: "application/json",
   }
   if (range) headers.Range = `${range.from}-${range.to}`
