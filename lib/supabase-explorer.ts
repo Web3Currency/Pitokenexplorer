@@ -116,7 +116,19 @@ export async function getExplorerTokenSnapshot(assetCode: string, issuer: string
 }
 
 export async function getExplorerPools() {
-  const rows = await supabaseGet<any>("explorer_token_pools", { select: "token_id,pool_id,pair,tvl_pi,token_reserve,pi_reserve,liquidity_pi,fee_bp,total_shares,providers,last_active_at,reserves,asset_code,asset_issuer,name", limit: 5000 })
+  const select = "token_id,pool_id,pair,tvl_pi,token_reserve,pi_reserve,liquidity_pi,fee_bp,total_shares,providers,last_active_at,reserves,asset_code,asset_issuer,name"
+  const pageSize = 1000
+  const rows: any[] = []
+  for (let from = 0; ; from += pageSize) {
+    const page = await supabaseGet<any>(
+      "explorer_token_pools",
+      { select, order: "tvl_pi.desc.nullslast" },
+      { from, to: from + pageSize - 1 },
+    )
+    rows.push(...page)
+    if (page.length < pageSize) break
+  }
+
   const grouped = new Map<string, any>()
   for (const p of rows) {
     const key = `${p.asset_code}:${p.asset_issuer}`
