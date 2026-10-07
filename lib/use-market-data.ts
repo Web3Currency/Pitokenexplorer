@@ -167,7 +167,7 @@ export type TokenSnapshotFieldStatus = "ok" | "unavailable" | "error"
 export interface TokenSnapshotResponse {
   id: string; price: string | null; liquidity: string | null; totalLiquidity?: string | null
   trustlines: number | null; holders: number | null; circulatingSupply: string | null
-  poolBalance?: string | null; poolId: string | null; ordersCount?: number | null; athPrice?: string | null; atlPrice?: string | null
+  poolBalance?: string | null; poolId: string | null; athPrice?: string | null; atlPrice?: string | null
   volume24h?: string | null; marketCap?: string | null
   flags?: { authRequired: boolean | null; authRevocable: boolean | null; authClawbackEnabled: boolean | null } | null
   orderBook: { bestBid: string | null; bestAsk: string | null; spread: string | null; bids: Array<{price:string;amount:string}>; asks: Array<{price:string;amount:string}> }
