@@ -25,7 +25,8 @@ async function supabaseGet<T>(view: string, params: Record<string, string | numb
 export async function getExplorerTokens() {
   const rows = await supabaseGet<any>("explorer_tokens", {
     select: "id,asset_code,asset_issuer,name,description,image_url,toml_url,home_domain,circulating_supply,trustlines,holders,pool_balance,has_pi_pool",
-    order: "has_pi_pool.desc,asset_code.asc",
+    has_pi_pool: "eq.true",
+    order: "asset_code.asc",
     limit: 1000,
   })
   return rows.map((t, index) => ({
@@ -124,7 +125,7 @@ export async function getExplorerPools() {
     const g = grouped.get(key)
     if (p.pi_reserve != null) g.piPools.push(p); else g.otherPools.push(p)
   }
-  return [...grouped.values()].map(t => {
+  return [...grouped.values()].filter(t => t.piPools.length > 0).map(t => {
     t.piPools.sort((a:any,b:any)=>(Number(b.pi_reserve)||0)-(Number(a.pi_reserve)||0))
     const main=t.piPools[0]
     const all=[...t.piPools,...t.otherPools]
