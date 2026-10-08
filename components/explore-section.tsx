@@ -73,7 +73,6 @@ function UnifiedStatsCard({
               <Info className="h-3 w-3" />
             </div>
             <div className="h-7 w-20 bg-muted/50 rounded animate-pulse" />
-            <div className="h-4 w-12 bg-muted/30 rounded animate-pulse mt-1" />
           </div>
           <div className="p-3 text-right">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1 justify-end">
@@ -81,7 +80,6 @@ function UnifiedStatsCard({
               <Info className="h-3 w-3 cursor-help" />
             </div>
             <div className="h-7 w-16 bg-muted/50 rounded animate-pulse ml-auto" />
-            <div className="h-4 w-20 bg-muted/30 rounded animate-pulse mt-1 ml-auto" />
           </div>
         </div>
       </div>
