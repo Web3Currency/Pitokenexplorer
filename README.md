@@ -1,33 +1,49 @@
-# Pitokenexplorer
+# Pi Token Explorer
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Pi Token Explorer is a W3C Digital Network project for exploring tokens and Pi-based liquidity on the Pi Network Testnet.
 
-## Built with v0
+It brings token information, market data, liquidity, trades and related activity into one simple explorer built for Pi users and developers.
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+## What this project does
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_sQMq934HL1ZZGebKgb86qUePSZj4)
+- Lists tokens with Pi liquidity on the Pi Testnet
+- Shows token details and market information
+- Tracks liquidity, trades and other available market activity
+- Uses Pi Network Testnet data and token metadata
+- Provides a mobile-first interface
+- Supports Pi App Studio / Pi authentication for the app experience
 
-## Getting Started
+## Important
 
-First, run the development server:
+Pi Token Explorer is an independent project by **W3C Digital Network**.
+
+It is **not an official Pi Network or Pi Core Team product**, and it is not affiliated with or endorsed by the Pi Core Team.
+
+The data shown by the explorer comes from public Testnet sources and may be delayed, incomplete or change over time. This project is for exploration and information, not financial advice.
+
+## Project
+
+- **Project:** Pi Token Explorer
+- **Built by:** W3C Digital Network
+- **Network:** Pi Network Testnet
+- **App:** https://apppitokenexplor8194.pinet.com
+- **Website:** https://pitokenexplorer.vercel.app
+
+## Development
+
+The codebase is maintained in this repository and deployed through Vercel.
+
+To run it locally:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Notes for contributors
 
-## Learn More
+Keep the project focused on being a clear, useful and reliable Pi Testnet token explorer.
 
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+When making changes, avoid presenting the project as an official Pi Network service or implying that Testnet data represents guaranteed or final market information.
