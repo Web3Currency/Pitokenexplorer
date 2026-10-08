@@ -7,6 +7,7 @@ interface UserContextType {
   user: PiUserData | null
   isLoading: boolean
   piSDKReady: boolean
+  piBrowserAvailable: boolean
   login: () => Promise<boolean>
   logout: () => Promise<void>
   isAuthenticated: boolean
@@ -16,8 +17,9 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PiUserData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [piSDKReady, setPiSDKReady] = useState(false)
+  const [piBrowserAvailable, setPiBrowserAvailable] = useState(false)
 
   const login = useCallback(async (): Promise<boolean> => {
     setIsLoading(true)
@@ -43,13 +45,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void login()
-  }, [login])
+    let cancelled = false
+
+    void piSDK.isPiBrowserAvailable().then((available) => {
+      if (cancelled) return
+      setPiBrowserAvailable(available)
+      setPiSDKReady(available)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const value: UserContextType = {
     user,
     isLoading,
     piSDKReady,
+    piBrowserAvailable,
     login,
     logout,
     isAuthenticated: user !== null,
