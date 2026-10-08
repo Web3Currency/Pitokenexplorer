@@ -415,6 +415,27 @@ export function ExploreSection() {
 
   const rankMovements = useRankMovement(validTokens)
 
+  // The displayed rank is always the token's current position by liquidity.
+  // It is calculated from the full token list before search, filters, or sorting,
+  // so changing the sort order never changes the token's rank number.
+  const liquidityRanks = useMemo(() => {
+    const ranked = [...validTokens]
+      .map((token, index) => ({
+        id: token.id,
+        liquidity: Number.parseFloat(String(token.liquidity ?? "").replace(/[^\d.-]/g, "") || "0"),
+        originalIndex: index,
+      }))
+      .sort((a, b) => {
+        const liquidityDifference = b.liquidity - a.liquidity
+        return liquidityDifference !== 0 ? liquidityDifference : a.originalIndex - b.originalIndex
+      })
+
+    return ranked.reduce<Record<string, number>>((ranks, token, index) => {
+      ranks[token.id] = index + 1
+      return ranks
+    }, {})
+  }, [validTokens])
+
   const isLoading = tokens.length === 0 && !tokensError && (tokensLoading || !tokens)
   const error = tokensError?.message || null
 
@@ -622,6 +643,12 @@ export function ExploreSection() {
                         onClick={() => router.push(`/token/${encodeURIComponent(String(token.symbol ?? ""))}?issuer=${encodeURIComponent(String((token as any).fullIssuer ?? ""))}`)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
+                        <div
+                          aria-label={"Rank " + (liquidityRanks[token.id] ?? "unranked") + " by liquidity"}
+                          className="w-7 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground"
+                        >
+                          {liquidityRanks[token.id] ?? "—"}
+                        </div>
                         {(token as any).logoUrl ? (
                           <img
                             src={(token as any).logoUrl!}
