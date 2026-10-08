@@ -363,9 +363,11 @@ export function ExploreSection() {
 
   const PAGE_SIZE = 20
   const [tokenPage, setTokenPage] = useState(1)
-  const listContainerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
+  const stickyControlsRef = useRef<HTMLDivElement>(null)
+  const firstTokenRef = useRef<HTMLButtonElement>(null)
+  const pendingPageScrollRef = useRef(false)
 
   const { data: tokens = [], isLoading: tokensLoading, error: tokensError } = useTokenRegistry()
   const { data: stats, isLoading: statsLoading, isDeferredLoading } = useMarketStats()
@@ -404,7 +406,12 @@ export function ExploreSection() {
   }, [tokens, tokenPrices])
 
   const validTokens = useMemo(
-    () => tokensWithPrices.filter((token) => Boolean(token?.symbol && (token as any)?.fullIssuer)),
+    () =>
+      tokensWithPrices.filter(
+        (token) =>
+          Boolean(token?.symbol && (token as any)?.fullIssuer) &&
+          (token as any)?.hasPiPool === true,
+      ),
     [tokensWithPrices],
   )
 
@@ -525,43 +532,70 @@ export function ExploreSection() {
   const handleTokenPageChange = (newPage: number) => {
     const nextPage = Math.min(Math.max(newPage, 1), tokenTotalPages)
     if (nextPage === safeTokenPage) return
+
+    pendingPageScrollRef.current = true
     setTokenPage(nextPage)
-    scrollListToTop()
   }
 
-  const scrollListToTop = () => {
-    listContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
+  useEffect(() => {
+    if (!pendingPageScrollRef.current) return
+
+    const frame = window.requestAnimationFrame(() => {
+      const scrollContainer = scrollRef.current
+      const firstToken = firstTokenRef.current
+      const stickyControls = stickyControlsRef.current
+
+      if (scrollContainer && firstToken && stickyControls) {
+        const top = Math.max(
+          0,
+          firstToken.offsetTop - stickyControls.offsetHeight - 8,
+        )
+        scrollContainer.scrollTo({ top, behavior: "smooth" })
+      }
+
+      pendingPageScrollRef.current = false
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [safeTokenPage, paginatedTokens.length])
 
   return (
     <div className="flex flex-col h-full">
   <div ref={scrollRef} className="flex-1 overflow-y-auto explore-scroll-container">
         <div className="min-h-full flex flex-col gap-4 p-4">
-          <div ref={heroRef}><UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} /></div>
+          <div
+            ref={stickyControlsRef}
+            className="sticky top-0 z-30 -mx-4 px-4 pt-4 pb-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+          >
+            <div ref={heroRef}>
+              <UnifiedStatsCard stats={stats || null} isDeferredLoading={isDeferredLoading} />
+            </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tokens..."
-                className="h-11 pl-9 bg-muted/30 border-0 shadow-sm rounded-xl focus-visible:ring-0 focus-visible:ring-offset-0"
+            <div className="flex items-center gap-2 mt-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tokens..."
+                  className="h-11 pl-9 bg-muted/30 border-0 shadow-sm rounded-xl focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+              <SortMenu
+                options={[
+                  { key: "price", label: "Price" },
+                  { key: "liquidity", label: "Liquidity" },
+                  { key: "change24h", label: "24h Change" },
+                ]}
+                sortBy={sortBy}
+                sortAsc={liquiditySortAsc}
+                onSelect={(key, asc) => {
+                  setSortBy(key)
+                  setLiquiditySortAsc(asc)
+                }}
               />
             </div>
-            <SortMenu
-              options={[
-                { key: "price", label: "Price" },
-                { key: "liquidity", label: "Liquidity" },
-                { key: "change24h", label: "24h Change" },
-              ]}
-              sortBy={sortBy}
-              sortAsc={liquiditySortAsc}
-              onSelect={(key, asc) => {
-                setSortBy(key)
-                setLiquiditySortAsc(asc)
-              }}
-            />          </div>
+          </div>
 
           {error ? (
             <div className="flex flex-col items-center justify-center py-12 text-destructive">
@@ -573,12 +607,13 @@ export function ExploreSection() {
               {isLoading ? (
                 <ListSkeleton />
               ) : (
-                <div className="space-y-2" ref={listContainerRef}>
+                <div className="space-y-2">
                   {paginatedTokens.map((token, index) => {
                     const rankMovement = rankMovements[token.id] || "neutral"
 
                     return (
                       <button
+                        ref={index === 0 ? firstTokenRef : undefined}
                         key={token.id || `token-${safeTokenPage}-${index}`}
                         onClick={() => router.push(`/token/${encodeURIComponent(String(token.symbol ?? ""))}?issuer=${encodeURIComponent(String((token as any).fullIssuer ?? ""))}`)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
