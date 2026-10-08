@@ -389,7 +389,12 @@ export function ExploreSection() {
     })
   }, [tokens, tokenPrices])
 
-  const rankMovements = useRankMovement(tokensWithPrices)
+  const validTokens = useMemo(
+    () => tokensWithPrices.filter((token) => Boolean(token?.symbol && (token as any)?.fullIssuer)),
+    [tokensWithPrices],
+  )
+
+  const rankMovements = useRankMovement(validTokens)
 
   const isLoading = tokens.length === 0 && !tokensError && (tokensLoading || !tokens)
   const error = tokensError?.message || null
@@ -442,7 +447,7 @@ export function ExploreSection() {
   }
 
   const filteredTokens = useMemo(() => {
-    const filtered = tokensWithPrices.filter((token) => {
+    const filtered = validTokens.filter((token) => {
       const matchesSearch =
         (token.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
         (token.symbol?.toLowerCase() ?? "").includes(searchQuery.toLowerCase())
@@ -485,7 +490,7 @@ export function ExploreSection() {
       }
       return liquiditySortAsc ? read(a, sortBy) - read(b, sortBy) : read(b, sortBy) - read(a, sortBy)
     })
-  }, [tokensWithPrices, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices])
+  }, [validTokens, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices])
 
   const tokenTotalPages = Math.ceil(filteredTokens.length / PAGE_SIZE)
 
@@ -508,9 +513,7 @@ export function ExploreSection() {
   const paginatedTokens = useMemo(() => {
     const safePage = tokenTotalPages > 0 ? Math.min(Math.max(tokenPage, 1), tokenTotalPages) : 1
     const startIndex = (safePage - 1) * PAGE_SIZE
-    return filteredTokens
-      .slice(startIndex, startIndex + PAGE_SIZE)
-      .filter((token) => Boolean(token?.symbol && (token as any)?.fullIssuer))
+    return filteredTokens.slice(startIndex, startIndex + PAGE_SIZE)
   }, [filteredTokens, tokenPage, tokenTotalPages])
 
   const handleTokenPageChange = (newPage: number) => {
