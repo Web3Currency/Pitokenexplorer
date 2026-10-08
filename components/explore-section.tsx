@@ -377,7 +377,7 @@ export function ExploreSection() {
   const tokensWithPrices = useMemo(() => {
     const source = Array.isArray(tokens) ? tokens : []
     return source
-      .filter((token) => Boolean(token && token.id && token.symbol && token.fullIssuer))
+      .filter((token) => Boolean(token && token.id && token.symbol && (token as any).fullIssuer))
       .map((token) => {
         const priceData = tokenPrices?.[token.id]
         return priceData
