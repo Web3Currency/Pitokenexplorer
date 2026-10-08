@@ -42,7 +42,14 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
             <h1 className="text-center text-xl font-semibold">{pool.title || `${pool.tokenCode} Pools`}</h1>
             <div className="rounded-xl bg-muted px-4 py-5 text-center">
               <div className="text-3xl font-bold">{pool.tvl || "—"} π</div>
-              <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">TVL</div>
+              <div className="mt-1 flex items-center justify-center gap-1 text-xs uppercase tracking-wider text-muted-foreground">
+                <span>Total Value Locked</span>
+                <MobileTooltip content="TVL is the total value of assets locked in this liquidity pool.">
+                  <span aria-label="About TVL" className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full">
+                    <Info className="h-3 w-3" />
+                  </span>
+                </MobileTooltip>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl bg-muted p-3 text-center">
