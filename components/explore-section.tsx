@@ -353,6 +353,38 @@ function ListSkeleton({ rows = 6 }: { rows?: number }) {
   return <TokenListSkeleton rows={rows} />
 }
 
+function InitialExplorerSkeleton() {
+  return (
+    <div className="flex h-full flex-col" aria-busy="true" aria-live="polite">
+      <div className="flex-1 overflow-y-auto explore-scroll-container">
+        <div className="min-h-full flex flex-col gap-4 p-4">
+          <div className="sticky top-0 z-30 -mx-4 px-4 pt-4 pb-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="bg-muted/30 rounded-xl shadow-sm overflow-hidden">
+              <div className="grid grid-cols-2 divide-x divide-border">
+                <div className="p-3">
+                  <div className="h-2.5 w-14 animate-pulse rounded bg-muted/70" />
+                  <div className="mt-2 h-7 w-20 animate-pulse rounded bg-muted" />
+                </div>
+                <div className="p-3 text-right">
+                  <div className="ml-auto h-2.5 w-20 animate-pulse rounded bg-muted/70" />
+                  <div className="ml-auto mt-2 h-7 w-16 animate-pulse rounded bg-muted" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-11 flex-1 animate-pulse rounded-xl bg-muted/40" />
+              <div className="h-11 w-11 animate-pulse rounded-xl bg-muted/40" />
+            </div>
+          </div>
+
+          <TokenListSkeleton rows={20} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ExploreSection() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
@@ -367,9 +399,36 @@ export function ExploreSection() {
   const firstTokenRef = useRef<HTMLButtonElement>(null)
   const pendingPageScrollRef = useRef(false)
 
-  const { data: tokens = [], isLoading: tokensLoading, error: tokensError } = useTokenRegistry()
-  const { data: stats, isLoading: statsLoading, isDeferredLoading } = useMarketStats()
-  const { data: tokenPrices } = useTokenPrices()
+  const {
+    data: tokens = [],
+    isLoading: tokensLoading,
+    isValidating: tokensValidating,
+    error: tokensError,
+  } = useTokenRegistry()
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isDeferredLoading,
+    isValidating: statsValidating,
+  } = useMarketStats()
+  const {
+    data: tokenPrices,
+    isLoading: tokenPricesLoading,
+    isValidating: tokenPricesValidating,
+  } = useTokenPrices()
+  const [initialDataReady, setInitialDataReady] = useState(false)
+
+  const allInitialDataReady =
+    tokens.length > 0 &&
+    tokenPrices !== undefined &&
+    stats !== undefined &&
+    !tokensLoading &&
+    !tokensValidating &&
+    !tokenPricesLoading &&
+    !tokenPricesValidating &&
+    !statsLoading &&
+    !statsValidating &&
+    !isDeferredLoading
   
   // Debug: Log sample token data when loaded
   useEffect(() => {
@@ -583,6 +642,16 @@ export function ExploreSection() {
 
     return () => window.cancelAnimationFrame(frame)
   }, [safeTokenPage, paginatedTokens.length])
+
+  useEffect(() => {
+    if (allInitialDataReady) {
+      setInitialDataReady(true)
+    }
+  }, [allInitialDataReady])
+
+  if (!initialDataReady) {
+    return <InitialExplorerSkeleton />
+  }
 
   return (
     <div className="flex flex-col h-full">
