@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s | Pi Token Explorer",
   },
   description:
-    "Explore Pi Network tokens with live token prices, liquidity, market data, and ecosystem information. Search and discover Pi ecosystem assets with liquidity pools.",
+    "Pi Token Explorer is built by W3C Digital Network to help users explore Pi Network tokens with live token prices, liquidity, market data, and ecosystem information.",
   applicationName: "Pi Token Explorer",
   keywords: [
     "Pi Token Explorer",
