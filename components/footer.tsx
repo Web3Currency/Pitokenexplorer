@@ -1,3 +1,5 @@
+import { TestnetBadge } from "@/components/testnet-badge"
+
 function XIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -64,8 +66,8 @@ function FooterIconLink({
 
 export function Footer() {
   return (
-    <footer className="shrink-0 border-t border-border bg-card">
-      <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-8 text-center">
+    <footer className="relative shrink-0 border-t border-border bg-card">
+      <div className="mx-auto flex max-w-5xl flex-col items-center px-4 pb-14 pt-8 text-center">
         <img
           src="https://i.imgur.com/4toqqzS.png"
           alt="W3C Digital Network"
@@ -128,6 +130,8 @@ export function Footer() {
         <div className="mt-4 text-xs text-muted-foreground">
           <span>© 2026 W3C Digital Network · PiToken Explorer</span>
         </div>
+
+        <TestnetBadge className="absolute bottom-3 right-4 sm:right-6" />
       </div>
     </footer>
   )
