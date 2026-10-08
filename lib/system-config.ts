@@ -7,7 +7,6 @@
           // Pi Network Configuration
           export const PI_NETWORK_CONFIG = {
             SDK_URL: "https://sdk.minepi.com/pi-sdk.js",
-            SANDBOX: false,
           } as const;
 
           // Backend Configuration
@@ -17,6 +16,5 @@
 
           // Backend URLs
           export const BACKEND_URLS = {
-            LOGIN: `${BACKEND_CONFIG.BASE_URL}/v1/login`,
-
+            LOGIN: `${BACKEND_CONFIG.BASE_URL}/pi/auth/v1/login`,
           } as const;
