@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Copy, Loader2 } from "lucide-react"
+import { ArrowLeft, Copy, Info, Loader2 } from "lucide-react"
+import { MobileTooltip } from "@/components/ui/tooltip"
 import type { Token } from "@/lib/mock-data"
 import { useTokenSnapshot } from "@/lib/use-market-data"
 
@@ -115,24 +116,34 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
 
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: "Market cap", value: (displayToken as any)?.marketCap ? String((displayToken as any).marketCap) + " π" : "—" },
-          { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—" },
-          { label: "Trustlines", value: displayToken?.trustlines != null ? String(displayToken.trustlines) : "—" },
-          { label: "Holders", value: (displayToken as any)?.holders != null ? String((displayToken as any).holders) : "—" },
-          { label: "In pools", value: (displayToken as any)?.poolBalance || "—" },
-          { label: "24h volume", value: (displayToken as any)?.volume24h ? String((displayToken as any).volume24h) + " π" : "—" },
-          { label: "All-time low", value: (displayToken as any)?.atlPrice != null ? formatPiPrice((displayToken as any).atlPrice) + " π" : "—" },
-          { label: "All-time high", value: (displayToken as any)?.athPrice != null ? formatPiPrice((displayToken as any).athPrice) + " π" : "—" },
+          { label: "Market cap", value: (displayToken as any)?.marketCap ? String((displayToken as any).marketCap) + " π" : "—", tooltip: "Estimated token value based on current price and circulating supply" },
+          { label: "Circ. supply", value: (displayToken as any)?.circulatingSupply || "—", tooltip: "Estimated amount of the token currently in circulation" },
+          { label: "Trustlines", value: displayToken?.trustlines != null ? String(displayToken.trustlines) : "—", tooltip: "Number of accounts that have created a trustline for this token" },
+          { label: "Holders", value: (displayToken as any)?.holders != null ? String((displayToken as any).holders) : "—", tooltip: "Number of accounts holding more than zero units of this token" },
+          { label: "In pools", value: (displayToken as any)?.poolBalance || "—", tooltip: "Amount of this token currently held in liquidity pools" },
+          { label: "24h volume", value: (displayToken as any)?.volume24h ? String((displayToken as any).volume24h) + " π" : "—", tooltip: "Total trading volume in PI over the last 24 hours" },
+          { label: "All-time low", value: (displayToken as any)?.atlPrice != null ? formatPiPrice((displayToken as any).atlPrice) + " π" : "—", tooltip: "Lowest recorded PI price for this token" },
+          { label: "All-time high", value: (displayToken as any)?.athPrice != null ? formatPiPrice((displayToken as any).athPrice) + " π" : "—", tooltip: "Highest recorded PI price for this token" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl bg-muted p-3 text-center">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{stat.label}</div>
+            <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              {stat.label}
+              <MobileTooltip content={stat.tooltip}>
+                <Info className="h-3 w-3 cursor-help" />
+              </MobileTooltip>
+            </div>
             <div className="mt-1 truncate text-sm font-semibold">{stat.value}</div>
           </div>
-        ))}
+        ))
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Order book</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Order book</h2>
+          <MobileTooltip content="Current buy and sell orders available for this token">
+            <Info className="h-3 w-3 cursor-help text-muted-foreground" />
+          </MobileTooltip>
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {[
             ["Best bid", orderBook?.bestBid],
