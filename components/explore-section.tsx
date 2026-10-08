@@ -10,7 +10,6 @@ import {
   Filter,
   BarChart3,
   Info,
-  Package,
   AlertCircle,
   X,
   ArrowUp,
