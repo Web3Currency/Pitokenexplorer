@@ -131,7 +131,7 @@ export function Footer() {
           <span>© 2026 W3C Digital Network · PiToken Explorer</span>
         </div>
 
-        <TestnetBadge className="absolute bottom-3 right-4 sm:right-6" />
+        <TestnetBadge className="absolute right-4 top-3 sm:right-6" />
       </div>
     </footer>
   )
