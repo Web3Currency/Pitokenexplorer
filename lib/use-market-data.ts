@@ -126,7 +126,8 @@ export function useMarketStatsDeferred(enabled = true) {
 
 export function useMarketStats() {
   const { data: instant, isLoading: instantLoading, error: instantError } = useMarketStatsInstant()
-  const { data: deferred, isLoading: deferredLoading } = useMarketStatsDeferred(Boolean(instant))
+  // Both stats datasets start together. The UI decides when they are allowed to render.
+  const { data: deferred, isLoading: deferredLoading, error: deferredError } = useMarketStatsDeferred(true)
 
   const combinedData: CombinedMarketStats | undefined = instant
     ? {
@@ -143,7 +144,7 @@ export function useMarketStats() {
     data: combinedData as MarketStats | undefined,
     isLoading: instantLoading,
     isDeferredLoading: deferredLoading,
-    error: instantError,
+    error: instantError || deferredError,
   }
 }
 
@@ -153,12 +154,12 @@ interface TokenPriceData {
   totalLiquidity?: string | null
 }
 
-/** Secondary dataset: load prices shortly after the token registry is available. */
+/** Initial market dataset: start immediately so the first screen can be gated on one coordinated load. */
 export function useTokenPrices(enabled = true) {
-  const ready = useDelayedEnable(350, enabled)
-  return useSWR<Record<string, TokenPriceData>>(ready ? "/api/explorer/tokens/prices" : null, fetcher, {
+  return useSWR<Record<string, TokenPriceData>>(enabled ? "/api/explorer/tokens/prices" : null, fetcher, {
     ...baseSwrConfig,
     refreshInterval: REFRESH_INTERVALS.PRICES,
+    revalidateOnMount: true,
   })
 }
 
