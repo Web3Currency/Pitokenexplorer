@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Menu, Globe, Shield, BanknoteIcon, LogIn, LogOut } from "lucide-react"
 import { toast } from "sonner"
 import { useUser } from "@/lib/user-context"
+import { TestnetBadge } from "@/components/testnet-badge"
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false)
@@ -34,13 +35,13 @@ export function ProfileMenu() {
 
       <SheetContent
         side="right"
-        className="w-80 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 border-0"
+        className="flex w-80 flex-col bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 border-0"
       >
         <SheetHeader className="pb-2">
           <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 flex-1 space-y-2 overflow-y-auto">
           <div className="rounded-xl bg-card px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -113,6 +114,10 @@ export function ProfileMenu() {
               <span className="text-[10px] text-muted-foreground">Active</span>
             </div>
           </button>
+        </div>
+
+        <div className="mt-auto flex shrink-0 justify-start border-t border-border/60 pt-4">
+          <TestnetBadge />
         </div>
       </SheetContent>
     </Sheet>
