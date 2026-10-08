@@ -18,6 +18,7 @@ declare global {
         scopes: string[],
         onIncompletePaymentFound: (payment: unknown) => void
       ) => Promise<AuthResult>
+      nativeFeaturesList?: () => Promise<unknown>
     }
   }
 }
@@ -85,6 +86,21 @@ class PiSDK {
     })
 
     return this.initPromise
+  }
+
+  async isPiBrowserAvailable(): Promise<boolean> {
+    try {
+      await this.init()
+
+      if (typeof window.Pi?.nativeFeaturesList !== "function") {
+        return false
+      }
+
+      await window.Pi.nativeFeaturesList()
+      return true
+    } catch {
+      return false
+    }
   }
 
   private async exchangeAccessToken(accessToken: string): Promise<PiUserData> {
