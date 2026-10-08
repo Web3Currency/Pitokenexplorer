@@ -36,12 +36,41 @@ const structuredData = {
 }
 
 function DesktopAccessScreen() {
-
   return (
     <section className="hidden min-h-screen items-center justify-center overflow-hidden bg-[#0b0710] px-6 py-10 md:flex">
+      <style>{`
+        @keyframes piExplorerOrangeGlow {
+          0%, 100% { transform: translate3d(-50%, 0, 0) scale(1); opacity: 0.75; }
+          25% { transform: translate3d(-42%, 18px, 0) scale(1.08); opacity: 0.9; }
+          50% { transform: translate3d(-58%, 8px, 0) scale(0.96); opacity: 0.68; }
+          75% { transform: translate3d(-48%, -14px, 0) scale(1.05); opacity: 0.82; }
+        }
+
+        @keyframes piExplorerPurpleGlow {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.6; }
+          25% { transform: translate3d(-22px, 18px, 0) scale(1.08); opacity: 0.72; }
+          50% { transform: translate3d(16px, -10px, 0) scale(0.94); opacity: 0.52; }
+          75% { transform: translate3d(-10px, -22px, 0) scale(1.04); opacity: 0.68; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .pi-explorer-glow {
+            animation: none !important;
+          }
+        }
+      `}</style>
+
       <div className="relative flex w-full max-w-sm flex-col items-center text-center">
-        <div className="pointer-events-none absolute -top-28 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-orange-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-32 h-48 w-48 rounded-full bg-purple-600/20 blur-3xl" />
+        <div
+          aria-hidden="true"
+          className="pi-explorer-glow pointer-events-none absolute -top-28 left-1/2 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl will-change-transform"
+          style={{ animation: "piExplorerOrangeGlow 18s ease-in-out infinite" }}
+        />
+        <div
+          aria-hidden="true"
+          className="pi-explorer-glow pointer-events-none absolute right-0 top-32 h-48 w-48 rounded-full bg-purple-600/20 blur-3xl will-change-transform"
+          style={{ animation: "piExplorerPurpleGlow 24s ease-in-out infinite" }}
+        />
 
         <img
           src="/pi-token-explorer-logo.svg"
