@@ -26,10 +26,13 @@ async function supabaseGet<T>(view: string, params: Record<string, string | numb
 export async function getExplorerTokens() {
   const rows = await supabaseGet<any>("explorer_tokens", {
     select: "id,asset_code,asset_issuer,name,description,image_url,toml_url,home_domain,circulating_supply,trustlines,holders,pool_balance,has_pi_pool",
+    asset_code: "not.is.null",
+    asset_issuer: "not.is.null",
     order: "has_pi_pool.desc,asset_code.asc",
     limit: 1000,
   })
-  return rows.map((t, index) => ({
+  const validRows = rows.filter((t) => t.asset_code && t.asset_issuer)
+  return validRows.map((t, index) => ({
     id: `${t.asset_code}:${t.asset_issuer}`,
     rank: index + 1,
     name: t.asset_code,
