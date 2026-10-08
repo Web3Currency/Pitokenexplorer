@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Copy, Check, Smartphone } from "lucide-react"
+import { useEffect, useState } from "react"
+import * as QRCode from "qrcode"
 import { ExploreSection } from "@/components/explore-section"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 
-const APP_URL = "https://pitokenexplorer.vercel.app/"
+const APP_URL = "https://apppitokenexplor8194.pinet.com"
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -38,63 +38,56 @@ const structuredData = {
 }
 
 function DesktopAccessScreen() {
-  const [copied, setCopied] = useState(false)
+  const [qrCode, setQrCode] = useState("")
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(APP_URL)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
-    } catch {
-      setCopied(false)
-    }
-  }
+  useEffect(() => {
+    QRCode.toDataURL(APP_URL, {
+      width: 360,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: {
+        dark: "#171221",
+        light: "#ffffff",
+      },
+    }).then(setQrCode)
+  }, [])
 
   return (
-    <section className="hidden min-h-screen items-center justify-center bg-background px-6 py-12 md:flex">
-      <div className="w-full max-w-md text-center">
-        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-sm">
-          <Smartphone className="h-10 w-10" aria-hidden="true" />
-        </div>
+    <section className="hidden min-h-screen items-center justify-center overflow-hidden bg-[#0b0710] px-6 py-10 md:flex">
+      <div className="relative flex w-full max-w-sm flex-col items-center text-center">
+        <div className="pointer-events-none absolute -top-28 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-orange-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-32 h-48 w-48 rounded-full bg-purple-600/20 blur-3xl" />
 
-        <div className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-muted-foreground">
-          PI TOKEN EXPLORER
-        </div>
+        <img
+          src="/pi-token-explorer-logo.svg"
+          alt="Pi Token Explorer"
+          className="relative h-24 w-24 rounded-3xl shadow-[0_0_45px_rgba(249,115,22,0.18)]"
+        />
 
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="relative mt-7 text-xl font-bold tracking-tight text-white">
           Built for mobile
         </h1>
 
-        <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-muted-foreground">
-          Pi Token Explorer is designed for a simple mobile experience. Open this link on your phone to continue.
-        </p>
-
-        <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Open on your phone
-          </p>
-          <p className="mt-2 break-all text-sm font-medium">pitokenexplorer.vercel.app</p>
-
-          <button
-            type="button"
-            onClick={copyLink}
-            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4" aria-hidden="true" />
-                Link copied
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4" aria-hidden="true" />
-                Copy link
-              </>
-            )}
-          </button>
+        <div className="relative mt-7 rounded-[2rem] bg-white p-4 shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
+          {qrCode ? (
+            <img
+              src={qrCode}
+              alt="QR code for Pi Token Explorer"
+              className="h-64 w-64 sm:h-72 sm:w-72"
+            />
+          ) : (
+            <div className="h-64 w-64 animate-pulse rounded-xl bg-gray-100 sm:h-72 sm:w-72" />
+          )}
         </div>
 
-        <p className="mt-8 text-xs text-muted-foreground">
+        <a
+          href={APP_URL}
+          className="relative mt-5 max-w-full break-all text-sm font-semibold text-orange-400 underline decoration-orange-400/40 underline-offset-4 transition-colors hover:text-orange-300"
+        >
+          {APP_URL.replace("https://", "")}
+        </a>
+
+        <p className="relative mt-10 text-xs font-medium tracking-wide text-white/45">
           Built by W3C Digital Network
         </p>
       </div>
