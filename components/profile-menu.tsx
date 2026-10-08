@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Globe, Shield, BanknoteIcon, LogIn, LogOut } from "lucide-react"
+import { Menu, Globe, BanknoteIcon, LogIn, LogOut } from "lucide-react"
 import { toast } from "sonner"
 import { useUser } from "@/lib/user-context"
 import { TestnetBadge } from "@/components/testnet-badge"
@@ -98,24 +98,6 @@ export function ProfileMenu() {
             </div>
             <span className="text-xs text-muted-foreground">PI (π)</span>
           </div>
-
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-3 text-left hover:bg-muted/60 active:bg-muted transition-colors"
-            onClick={() => toast.info("Security protection is active.")}
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <Shield className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">Security</p>
-              <p className="text-xs text-muted-foreground">Account protection</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              <span className="text-[10px] text-muted-foreground">Active</span>
-            </div>
-          </button>
         </div>
 
         <div className="mt-auto flex shrink-0 justify-start pt-4">
