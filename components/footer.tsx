@@ -114,7 +114,18 @@ export function Footer() {
           </FooterIconLink>
         </div>
 
-        <div className="mt-6 text-xs text-muted-foreground">
+        <div className="mt-6 max-w-xl text-xs leading-5 text-muted-foreground">
+          Pi Token Explorer is an independent W3C Digital Network project. Data is indexed from Pi Network Testnet
+          Horizon and token metadata sources and may be delayed or incomplete. This is not financial advice.
+        </div>
+
+        <nav className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <a href="/about" className="hover:text-foreground">About</a>
+          <a href="/terms" className="hover:text-foreground">Terms</a>
+          <a href="/privacy" className="hover:text-foreground">Privacy</a>
+        </nav>
+
+        <div className="mt-4 text-xs text-muted-foreground">
           <span>© 2026 W3C Digital Network · PiToken Explorer</span>
         </div>
       </div>
