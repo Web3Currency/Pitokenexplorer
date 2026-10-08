@@ -508,7 +508,9 @@ export function ExploreSection() {
   const paginatedTokens = useMemo(() => {
     const safePage = tokenTotalPages > 0 ? Math.min(Math.max(tokenPage, 1), tokenTotalPages) : 1
     const startIndex = (safePage - 1) * PAGE_SIZE
-    return filteredTokens.slice(startIndex, startIndex + PAGE_SIZE)
+    return filteredTokens
+      .slice(startIndex, startIndex + PAGE_SIZE)
+      .filter((token) => Boolean(token?.symbol && (token as any)?.fullIssuer))
   }, [filteredTokens, tokenPage, tokenTotalPages])
 
   const handleTokenPageChange = (newPage: number) => {
@@ -587,7 +589,7 @@ export function ExploreSection() {
                         <div
                           className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white text-xl shrink-0 ${(token as any).logoUrl ? "hidden" : ""}`}
                         >
-                          {token.symbol[0]}
+                          {token.symbol?.[0] || "?"}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
