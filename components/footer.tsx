@@ -38,23 +38,27 @@ function EmailIcon({ className = "" }: { className?: string }) {
   )
 }
 
-function FooterIconButton({
+function FooterIconLink({
   label,
+  href,
   children,
   className,
 }: {
   label: string
+  href: string
   children: React.ReactNode
   className: string
 }) {
   return (
-    <button
-      type="button"
+    <a
+      href={href}
       aria-label={label}
+      target="_blank"
+      rel="noopener noreferrer"
       className={`inline-flex h-10 w-10 items-center justify-center transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
     >
       {children}
-    </button>
+    </a>
   )
 }
 
@@ -62,34 +66,52 @@ export function Footer() {
   return (
     <footer className="shrink-0 border-t border-border bg-card">
       <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-8 text-center">
-        {/* Temporary text mark until the official W3C logo URL is supplied. */}
-        <div
-          aria-label="W3C"
-          className="text-5xl font-black leading-none tracking-[-0.08em] text-foreground"
-        >
-          W3C
-        </div>
+        <img
+          src="https://i.imgur.com/4toqqzS.png"
+          alt="W3C Digital Network"
+          className="h-20 w-auto object-contain"
+        />
 
         <div className="mt-6 flex items-center justify-center gap-6">
-          <FooterIconButton label="Official X" className="text-foreground">
+          <FooterIconLink
+            label="Official X"
+            href="https://x.com/web3currencyng"
+            className="text-foreground"
+          >
             <XIcon className="h-6 w-6" />
-          </FooterIconButton>
+          </FooterIconLink>
 
-          <FooterIconButton label="Official WhatsApp Business" className="text-[#25D366]">
+          <FooterIconLink
+            label="Official WhatsApp Business"
+            href="https://wa.me/w3cdigitalnetwork"
+            className="text-[#25D366]"
+          >
             <WhatsAppIcon className="h-7 w-7" />
-          </FooterIconButton>
+          </FooterIconLink>
 
-          <FooterIconButton label="Official GitHub" className="text-foreground">
+          <FooterIconLink
+            label="Official GitHub"
+            href="https://github.com/web3currency"
+            className="text-foreground"
+          >
             <GitHubIcon className="h-7 w-7" />
-          </FooterIconButton>
+          </FooterIconLink>
 
-          <FooterIconButton label="Official Telegram" className="text-[#229ED9]">
+          <FooterIconLink
+            label="Official Telegram"
+            href="https://t.me/web3currencyng"
+            className="text-[#229ED9]"
+          >
             <TelegramIcon className="h-7 w-7" />
-          </FooterIconButton>
+          </FooterIconLink>
 
-          <FooterIconButton label="Official email" className="text-red-500">
+          <FooterIconLink
+            label="Official email"
+            href="mailto:w3cdigitalnetwork@gmail.com"
+            className="text-red-500"
+          >
             <EmailIcon className="h-6 w-6" />
-          </FooterIconButton>
+          </FooterIconLink>
         </div>
 
         <div className="mt-6 text-xs text-muted-foreground">
