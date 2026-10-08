@@ -49,11 +49,15 @@ function DesktopAccessScreen() {
           className="relative h-24 w-24 rounded-3xl shadow-[0_0_45px_rgba(249,115,22,0.18)]"
         />
 
-        <h1 className="relative mt-7 text-xl font-bold tracking-tight text-white">
-          Built for mobile
+        <h1 className="relative mt-6 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          Pi Token Explorer
         </h1>
 
-        <div className="relative mt-7 rounded-[2rem] bg-white p-4 shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
+        <p className="relative mt-1 text-xs font-medium uppercase tracking-[0.18em] text-white/50">
+          Built for Mobile
+        </p>
+
+        <div className="relative mt-6 rounded-[2rem] bg-white p-4 shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
           <img
             src={`https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=1&data=${encodeURIComponent(APP_URL)}`}
             alt="QR code for Pi Token Explorer"
