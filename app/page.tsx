@@ -1,7 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import * as QRCode from "qrcode"
 import { ExploreSection } from "@/components/explore-section"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
@@ -38,19 +36,6 @@ const structuredData = {
 }
 
 function DesktopAccessScreen() {
-  const [qrCode, setQrCode] = useState("")
-
-  useEffect(() => {
-    QRCode.toDataURL(APP_URL, {
-      width: 360,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: {
-        dark: "#171221",
-        light: "#ffffff",
-      },
-    }).then(setQrCode)
-  }, [])
 
   return (
     <section className="hidden min-h-screen items-center justify-center overflow-hidden bg-[#0b0710] px-6 py-10 md:flex">
@@ -69,15 +54,11 @@ function DesktopAccessScreen() {
         </h1>
 
         <div className="relative mt-7 rounded-[2rem] bg-white p-4 shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
-          {qrCode ? (
-            <img
-              src={qrCode}
-              alt="QR code for Pi Token Explorer"
-              className="h-64 w-64 sm:h-72 sm:w-72"
-            />
-          ) : (
-            <div className="h-64 w-64 animate-pulse rounded-xl bg-gray-100 sm:h-72 sm:w-72" />
-          )}
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=1&data=${encodeURIComponent(APP_URL)}`}
+            alt="QR code for Pi Token Explorer"
+            className="h-64 w-64 sm:h-72 sm:w-72"
+          />
         </div>
 
         <a
