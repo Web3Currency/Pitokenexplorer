@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#000"/><g fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round"><circle cx="452" cy="552" r="274"/><path d="M646 746 L835 935"/></g><g fill="#fff"><path d="M722 45 C731 126 748 160 842 176 C748 192 731 226 722 307 C713 226 696 192 602 176 C696 160 713 126 722 45Z"/><path d="M629 194 C638 276 655 310 749 326 C655 342 638 376 629 458 C620 376 603 342 509 326 C603 310 620 276 629 194Z"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" fill="#000"/>
+<g fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round">
+  <circle cx="451" cy="552" r="286"/>
+  <circle cx="451" cy="552" r="252"/>
+  <path d="M650 748 L851 949"/>
+  <path d="M624 774 L825 975"/>
+</g>
+<path d="M722 45 C731 126 748 160 842 176 C748 192 731 226 722 307 C713 226 696 192 602 176 C696 160 713 126 722 45Z" fill="#fff"/>
+<path d="M629 194 L651 289 L749 326 L651 363 L629 458 L607 363 L509 326 L607 289 Z" fill="#000" stroke="#fff" stroke-width="28" stroke-linejoin="miter"/>
+</svg>
