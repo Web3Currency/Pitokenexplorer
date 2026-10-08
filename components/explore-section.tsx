@@ -546,9 +546,15 @@ export function ExploreSection() {
       const stickyControls = stickyControlsRef.current
 
       if (scrollContainer && firstToken && stickyControls) {
+        const containerRect = scrollContainer.getBoundingClientRect()
+        const firstTokenRect = firstToken.getBoundingClientRect()
+        const stickyHeight = stickyControls.offsetHeight
         const top = Math.max(
           0,
-          firstToken.offsetTop - stickyControls.offsetHeight - 8,
+          scrollContainer.scrollTop +
+            (firstTokenRect.top - containerRect.top) -
+            stickyHeight -
+            8,
         )
         scrollContainer.scrollTo({ top, behavior: "smooth" })
       }
