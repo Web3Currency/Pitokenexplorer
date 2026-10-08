@@ -10,7 +10,7 @@ import { TestnetBadge } from "@/components/testnet-badge"
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false)
-  const { user, isLoading, login, logout, isAuthenticated } = useUser()
+  const { user, isLoading, login, logout, isAuthenticated, piBrowserAvailable } = useUser()
 
   const handleLogin = async () => {
     const success = await login()
@@ -42,34 +42,36 @@ export function ProfileMenu() {
         </SheetHeader>
 
         <div className="mt-2 flex-1 space-y-2 overflow-y-auto">
-          <div className="rounded-xl bg-card px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          {piBrowserAvailable && (
+            <div className="rounded-xl bg-card px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  {isAuthenticated ? (
+                    <span className="text-sm font-semibold">@</span>
+                  ) : (
+                    <LogIn className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {isAuthenticated ? `@${user?.username}` : "Pi Account"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isAuthenticated ? "Signed in" : "Sign in with Pi Network"}
+                  </p>
+                </div>
                 {isAuthenticated ? (
-                  <span className="text-sm font-semibold">@</span>
+                  <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
                 ) : (
-                  <LogIn className="h-4 w-4 text-primary" />
+                  <Button variant="outline" size="sm" onClick={handleLogin} disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Sign in"}
+                  </Button>
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {isAuthenticated ? `@${user?.username}` : "Pi Account"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isAuthenticated ? "Signed in" : "Sign in with Pi Network"}
-                </p>
-              </div>
-              {isAuthenticated ? (
-                <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={handleLogin} disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </Button>
-              )}
             </div>
-          </div>
+          )}
 
           <button
             type="button"
