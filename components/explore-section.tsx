@@ -125,7 +125,6 @@ function UnifiedStatsCard({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
               Liquidity Details
             </DialogTitle>
           </DialogHeader>
@@ -135,13 +134,23 @@ function UnifiedStatsCard({
               <div className="text-sm text-muted-foreground text-center mt-1">Total Network Liquidity</div>
             </div>
             <div className="space-y-3 text-sm"><div className="flex justify-between">
-                <span className="text-muted-foreground">24h Volume</span>
+                <span className="text-muted-foreground flex items-center gap-1">
+                  24h Volume
+                  <MobileTooltip content="Total trading volume in PI over the last 24 hours">
+                    <Info className="h-3 w-3 cursor-help" />
+                  </MobileTooltip>
+                </span>
                 <span className="font-semibold">
                   {isDeferredLoading ? <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" /> : stats.totalVolume24h || "—"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">24h Volume Change</span>
+                <span className="text-muted-foreground flex items-center gap-1">
+                  24h Volume Change
+                  <MobileTooltip content="How much the 24h trading volume changed compared with the previous 24 hours">
+                    <Info className="h-3 w-3 cursor-help" />
+                  </MobileTooltip>
+                </span>
                 <span className={`font-semibold ${getChangeColor(stats.volume24hChange)}`}>
                   {isDeferredLoading ? (
                     <span className="inline-block h-3.5 w-16 animate-pulse rounded bg-muted" />
@@ -161,11 +170,21 @@ function UnifiedStatsCard({
               </div>
               <div className="border-t border-border pt-3 mt-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Liquidity Pools</span>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    Total Liquidity Pools
+                    <MobileTooltip content="Total number of liquidity pools in the explorer">
+                      <Info className="h-3 w-3 cursor-help" />
+                    </MobileTooltip>
+                  </span>
                   <span className="font-semibold">{stats.poolCount || null}</span>
                 </div>
                 <div className="flex justify-between mt-2">
-                  <span className="text-muted-foreground">Largest Pool</span>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    Largest Pool
+                    <MobileTooltip content="The liquidity pool with the most PI locked in it">
+                      <Info className="h-3 w-3 cursor-help" />
+                    </MobileTooltip>
+                  </span>
                   <span className="font-semibold text-amber-500">{stats.largestPool || null}</span>
                 </div>
               </div>
