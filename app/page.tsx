@@ -1,9 +1,7 @@
 import { ExploreSection } from "@/components/explore-section"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
-import type { WebApplication, WithContext } from "schema-dts"
-
-const structuredData: WithContext<WebApplication> = {
+const structuredData = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: "Pi Token Explorer",
