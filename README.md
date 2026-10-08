@@ -27,7 +27,6 @@ The data shown by the explorer comes from public Testnet sources and may be dela
 - **Built by:** W3C Digital Network
 - **Network:** Pi Network Testnet
 - **App:** https://apppitokenexplor8194.pinet.com
-- **Website:** https://pitokenexplorer.vercel.app
 
 ## Development
 
