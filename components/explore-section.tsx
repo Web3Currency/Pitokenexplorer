@@ -375,24 +375,16 @@ export function ExploreSection() {
   }, [tokens])
 
   const tokensWithPrices = useMemo(() => {
-    if (!tokens || !tokenPrices) return tokens
-    return tokens.map((token) => {
-      const priceData = tokenPrices[token.id]
-      if (priceData) {
-        return {
-          ...token,
-          price: priceData.price,
-          liquidity: priceData.liquidity,
-        }
-      }
-      return token
-    })
+    const source = Array.isArray(tokens) ? tokens : []
+    return source
+      .filter((token) => Boolean(token && token.id && token.symbol && token.fullIssuer))
+      .map((token) => {
+        const priceData = tokenPrices?.[token.id]
+        return priceData
+          ? { ...token, price: priceData.price, liquidity: priceData.liquidity }
+          : token
+      })
   }, [tokens, tokenPrices])
-
-  const validTokens = useMemo(
-    () => tokensWithPrices.filter((token) => Boolean(token?.symbol && (token as any)?.fullIssuer)),
-    [tokensWithPrices],
-  )
 
   const rankMovements = useRankMovement(validTokens)
 
@@ -492,35 +484,26 @@ export function ExploreSection() {
     })
   }, [validTokens, searchQuery, activeFilters, liquiditySortAsc, sortBy, tokenPrices])
 
-  const tokenTotalPages = Math.ceil(filteredTokens.length / PAGE_SIZE)
+  const tokenTotalPages = Math.max(1, Math.ceil(filteredTokens.length / PAGE_SIZE))
+  const safeTokenPage = Math.min(Math.max(tokenPage, 1), tokenTotalPages)
 
-  // Keep pagination state valid whenever filtering/sorting changes the result set.
   useEffect(() => {
-    if (tokenTotalPages === 0) {
-      if (tokenPage !== 1) setTokenPage(1)
-      return
-    }
-
-    if (tokenPage > tokenTotalPages) {
-      setTokenPage(tokenTotalPages)
-    }
-  }, [tokenPage, tokenTotalPages])
+    if (tokenPage !== safeTokenPage) setTokenPage(safeTokenPage)
+  }, [tokenPage, safeTokenPage])
 
   useEffect(() => {
     setTokenPage(1)
   }, [searchQuery, activeFilters])
 
   const paginatedTokens = useMemo(() => {
-    const safePage = tokenTotalPages > 0 ? Math.min(Math.max(tokenPage, 1), tokenTotalPages) : 1
-    const startIndex = (safePage - 1) * PAGE_SIZE
+    const startIndex = (safeTokenPage - 1) * PAGE_SIZE
     return filteredTokens.slice(startIndex, startIndex + PAGE_SIZE)
-  }, [filteredTokens, tokenPage, tokenTotalPages])
+  }, [filteredTokens, safeTokenPage])
 
   const handleTokenPageChange = (newPage: number) => {
-    if (tokenTotalPages === 0) return
-    const safePage = Math.min(Math.max(newPage, 1), tokenTotalPages)
-    if (safePage === tokenPage) return
-    setTokenPage(safePage)
+    const nextPage = Math.min(Math.max(newPage, 1), tokenTotalPages)
+    if (nextPage === safeTokenPage) return
+    setTokenPage(nextPage)
     scrollListToTop()
   }
 
@@ -574,8 +557,8 @@ export function ExploreSection() {
 
                     return (
                       <button
-                        key={`${token.id}-${index}`}
-                        onClick={() => router.push(`/token/${encodeURIComponent(token.symbol)}?issuer=${encodeURIComponent((token as any).fullIssuer || "")}`)}
+                        key={token.id || `token-${safeTokenPage}-${index}`}
+                        onClick={() => router.push(`/token/${encodeURIComponent(String(token.symbol ?? ""))}?issuer=${encodeURIComponent(String((token as any).fullIssuer ?? ""))}`)}
                         className="w-full flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-muted transition-colors text-left"
                       >
                         {(token as any).logoUrl ? (
@@ -620,13 +603,13 @@ export function ExploreSection() {
                     )
                   })}
 
-                  {tokenTotalPages > 1 && (
+                  {filteredTokens.length > PAGE_SIZE && (
                     <div className="relative flex items-center justify-between pt-4 pb-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleTokenPageChange(tokenPage - 1)}
-                        disabled={tokenPage === 1}
+                        onClick={() => handleTokenPageChange(safeTokenPage - 1)}
+                        disabled={safeTokenPage === 1}
                         className="h-9 px-3 gap-1"
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -635,8 +618,8 @@ export function ExploreSection() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleTokenPageChange(tokenPage + 1)}
-                        disabled={tokenPage === tokenTotalPages}
+                        onClick={() => handleTokenPageChange(safeTokenPage + 1)}
+                        disabled={safeTokenPage === tokenTotalPages}
                         className="h-9 px-3 gap-1"
                       >
                         Next
