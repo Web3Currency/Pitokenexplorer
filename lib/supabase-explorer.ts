@@ -23,16 +23,37 @@ async function supabaseGet<T>(view: string, params: Record<string, string | numb
   return response.json()
 }
 
+async function supabaseGetAll<T>(
+  view: string,
+  params: Record<string, string | number | undefined> = {},
+  pageSize = 1000,
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let from = 0; ; from += pageSize) {
+    const page = await supabaseGet<T>(view, params, { from, to: from + pageSize - 1 })
+    rows.push(...page)
+    if (page.length < pageSize) break
+  }
+  return rows
+}
+
 export async function getExplorerTokens() {
-  const rows = await supabaseGet<any>("explorer_tokens", {
+  const rows = await supabaseGetAll<any>("explorer_tokens", {
     select: "id,asset_code,asset_issuer,name,description,image_url,toml_url,home_domain,circulating_supply,trustlines,holders,pool_balance,has_pi_pool",
     asset_code: "not.is.null",
     asset_issuer: "not.is.null",
-    order: "has_pi_pool.desc,asset_code.asc",
-    limit: 1000,
+    has_pi_pool: "eq.true",
+    order: "asset_code.asc",
   })
-  const validRows = rows.filter((t) => t.asset_code && t.asset_issuer)
-  return validRows.map((t, index) => ({
+
+  // Keep the API contract explicitly unique by asset code + issuer.
+  const uniqueRows = [...new Map(
+    rows
+      .filter((t) => t.asset_code && t.asset_issuer && t.has_pi_pool === true)
+      .map((t) => [`${t.asset_code}:${t.asset_issuer}`, t]),
+  ).values()]
+
+  return uniqueRows.map((t, index) => ({
     id: `${t.asset_code}:${t.asset_issuer}`,
     rank: index + 1,
     name: t.asset_code,
@@ -42,7 +63,7 @@ export async function getExplorerTokens() {
     category: null,
     verified: false,
     logoUrl: t.image_url ?? null,
-    hasPiPool: Boolean(t.has_pi_pool),
+    hasPiPool: true,
     price: null, marketCap: null, liquidity: null, change: null,
     holders: t.holders ?? null, trustlines: t.trustlines ?? null,
     totalSupply: null, circulatingSupply: t.circulating_supply?.toString() ?? null,
@@ -51,14 +72,13 @@ export async function getExplorerTokens() {
 }
 
 export async function getExplorerPrices() {
-  const rows = await supabaseGet<any>("explorer_market", {
+  const rows = await supabaseGetAll<any>("explorer_market", {
     select: "token_id,price_pi,liquidity_pi,total_liquidity_pi",
-    limit: 1000,
   })
-  const tokens = await supabaseGet<any>("explorer_tokens", {
-    select: "id,asset_code,asset_issuer",
-    order: "has_pi_pool.desc,asset_code.asc",
-    limit: 1000,
+  const tokens = await supabaseGetAll<any>("explorer_tokens", {
+    select: "id,asset_code,asset_issuer,has_pi_pool",
+    has_pi_pool: "eq.true",
+    order: "asset_code.asc",
   })
   const byId = new Map(tokens.map(t => [t.id, t]))
   const result: Record<string, any> = {}
@@ -76,7 +96,13 @@ export async function getExplorerPrices() {
 
 export async function getExplorerStats() {
   const rows = await supabaseGet<any>("explorer_stats", { network: "eq.Testnet", select: "*" })
-  return rows[0] ?? null
+  const piPoolTokens = await supabaseGetAll<any>("explorer_tokens", {
+    select: "id",
+    has_pi_pool: "eq.true",
+  })
+
+  const stats = rows[0] ?? null
+  return stats ? { ...stats, token_count: piPoolTokens.length } : null
 }
 
 export async function getExplorerTokenSnapshot(assetCode: string, issuer: string) {
