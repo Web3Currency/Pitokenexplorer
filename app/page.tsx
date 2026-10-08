@@ -1,4 +1,5 @@
 import { ExploreSection } from "@/components/explore-section"
+import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 
 export default function HomePage() {
@@ -8,6 +9,7 @@ export default function HomePage() {
       <main className="flex-1 min-h-0 overflow-hidden">
         <ExploreSection />
       </main>
+      <Footer />
     </div>
   )
 }
