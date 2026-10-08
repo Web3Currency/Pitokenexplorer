@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback } from "react"
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { piSDK, type PiUserData } from "./pi-sdk"
 
 interface UserContextType {
@@ -8,7 +8,7 @@ interface UserContextType {
   isLoading: boolean
   piSDKReady: boolean
   login: () => Promise<boolean>
-  logout: () => void
+  logout: () => Promise<void>
   isAuthenticated: boolean
 }
 
@@ -16,23 +16,15 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PiUserData | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [piSDKReady, setPiSDKReady] = useState(false)
 
-  // The Pi SDK is intentionally lazy. The read-only Explorer should not load
-  // authentication code or initialize the SDK until the user chooses to connect.
   const login = useCallback(async (): Promise<boolean> => {
     setIsLoading(true)
 
     try {
       await piSDK.init()
       setPiSDKReady(true)
-
-      const savedUser = piSDK.getUserData()
-      if (savedUser) {
-        setUser(savedUser)
-        return true
-      }
 
       const userData = await piSDK.authenticate()
       setUser(userData)
@@ -45,10 +37,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const logout = useCallback(() => {
-    piSDK.clearUserData()
+  const logout = useCallback(async () => {
+    await piSDK.logout()
     setUser(null)
   }, [])
+
+  useEffect(() => {
+    void login()
+  }, [login])
 
   const value: UserContextType = {
     user,
