@@ -1,81 +1,70 @@
 import { NextRequest, NextResponse } from "next/server"
 
-interface ValidateRequest {
+const APP_STUDIO_LOGIN_URL =
+  "https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com/pi/auth/v1/login"
+
+interface LoginRequest {
   accessToken: string
-  uid: string
-  username: string
 }
 
-/**
- * POST /api/pi/validate
- * 
- * Validates a Pi Network access token by calling the Pi API
- * GET https://api.minepi.com/v2/me with Authorization: Bearer <accessToken>
- * 
- * This ensures the token is valid before establishing a session.
- * No Pi Network API key is required - the access token is sufficient.
- */
+interface AppStudioLoginResponse {
+  sessionToken: string
+  user: {
+    uid: string
+    username: string
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body: ValidateRequest = await request.json()
-    const { accessToken, uid, username } = body
+    const body: LoginRequest = await request.json()
+    const accessToken = body?.accessToken
 
-    if (!accessToken || !uid || !username) {
-      return NextResponse.json(
-        { error: "Missing required fields: accessToken, uid, username" },
-        { status: 400 }
-      )
+    if (!accessToken || typeof accessToken !== "string") {
+      return NextResponse.json({ error: "Missing accessToken" }, { status: 400 })
     }
 
-    console.log("[v0] Validating Pi token for user:", username)
-
-    // Call Pi API to validate the token
-    // GET https://api.minepi.com/v2/me with Authorization: Bearer <accessToken>
-    const response = await fetch("https://api.minepi.com/v2/me", {
-      method: "GET",
+    const response = await fetch(APP_STUDIO_LOGIN_URL, {
+      method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ accessToken }),
+      cache: "no-store",
     })
 
-    if (!response.ok) {
-      console.error("[v0] Pi API validation failed:", response.status, response.statusText)
+    const result = (await response.json().catch(() => null)) as AppStudioLoginResponse | null
+
+    if (!response.ok || !result?.sessionToken || !result?.user?.uid || !result?.user?.username) {
+      console.error("[pi-auth] App Studio login failed:", response.status)
       return NextResponse.json(
-        { error: "Token validation failed" },
-        { status: 401 }
+        { error: "Pi authentication failed" },
+        { status: response.status === 401 ? 401 : 502 }
       )
     }
 
-    const piUserData = await response.json()
-    console.log("[v0] Pi token validated successfully for:", piUserData.username)
-
-    // Verify the uid matches
-    if (piUserData.uid !== uid) {
-      console.error("[v0] UID mismatch:", piUserData.uid, "!==", uid)
-      return NextResponse.json(
-        { error: "User ID mismatch" },
-        { status: 401 }
-      )
-    }
-
-    // Token is valid - return success
-    return NextResponse.json(
+    const nextResponse = NextResponse.json(
       {
         success: true,
-        message: "Token validated successfully",
         user: {
-          uid: piUserData.uid,
-          username: piUserData.username,
+          uid: result.user.uid,
+          username: result.user.username,
         },
       },
       { status: 200 }
     )
+
+    nextResponse.cookies.set("pi_session", result.sessionToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    })
+
+    return nextResponse
   } catch (error) {
-    console.error("[v0] Token validation error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    console.error("[pi-auth] Login error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
