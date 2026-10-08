@@ -38,7 +38,7 @@ export default function HomePage() {
         <section className="sr-only" aria-label="About Pi Token Explorer">
           <h2>Pi Token Explorer</h2>
           <p>
-            Pi Token Explorer is a web application for exploring the Pi Network token ecosystem.
+            Pi Token Explorer is a web application built by W3C Digital Network for exploring the Pi Network token ecosystem.
             It helps users discover Pi ecosystem tokens that have liquidity pools and view available
             token prices, liquidity, market data, and token information.
           </p>
