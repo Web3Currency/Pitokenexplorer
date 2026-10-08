@@ -125,9 +125,9 @@ export function useMarketStatsDeferred(enabled = true) {
 }
 
 export function useMarketStats() {
-  const { data: instant, isLoading: instantLoading, error: instantError } = useMarketStatsInstant()
+  const { data: instant, isLoading: instantLoading, isValidating: instantValidating, error: instantError } = useMarketStatsInstant()
   // Both stats datasets start together. The UI decides when they are allowed to render.
-  const { data: deferred, isLoading: deferredLoading, error: deferredError } = useMarketStatsDeferred(true)
+  const { data: deferred, isLoading: deferredLoading, isValidating: deferredValidating, error: deferredError } = useMarketStatsDeferred(true)
 
   const combinedData: CombinedMarketStats | undefined = instant
     ? {
@@ -144,6 +144,7 @@ export function useMarketStats() {
     data: combinedData as MarketStats | undefined,
     isLoading: instantLoading,
     isDeferredLoading: deferredLoading,
+    isValidating: instantValidating || deferredValidating,
     error: instantError || deferredError,
   }
 }
