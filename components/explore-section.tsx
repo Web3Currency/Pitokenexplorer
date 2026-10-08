@@ -386,6 +386,11 @@ export function ExploreSection() {
       })
   }, [tokens, tokenPrices])
 
+  const validTokens = useMemo(
+    () => tokensWithPrices.filter((token) => Boolean(token?.symbol && (token as any)?.fullIssuer)),
+    [tokensWithPrices],
+  )
+
   const rankMovements = useRankMovement(validTokens)
 
   const isLoading = tokens.length === 0 && !tokensError && (tokensLoading || !tokens)
