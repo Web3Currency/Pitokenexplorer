@@ -134,7 +134,7 @@ export function TokenDetailsView({ assetCode, issuer }: { assetCode: string; iss
             </div>
             <div className="mt-1 truncate text-sm font-semibold">{stat.value}</div>
           </div>
-        ))
+        ))}
       </div>
 
       <section className="space-y-3">
