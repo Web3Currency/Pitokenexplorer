@@ -116,7 +116,7 @@ export function ProfileMenu() {
           </button>
         </div>
 
-        <div className="mt-auto flex shrink-0 justify-start border-t border-border/60 pt-4">
+        <div className="mt-auto flex shrink-0 justify-start pt-4">
           <TestnetBadge />
         </div>
       </SheetContent>
