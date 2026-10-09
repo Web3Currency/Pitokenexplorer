@@ -21,6 +21,9 @@ function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimiti
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 
+const glassTooltipSurface =
+  "relative overflow-hidden border border-white/20 bg-background/35 text-foreground shadow-[0_8px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/25 dark:border-white/15 dark:bg-black/30 dark:supports-[backdrop-filter]:bg-black/20"
+
 function TooltipContent({
   className,
   sideOffset = 0,
@@ -33,13 +36,14 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          "bg-card/60 text-card-foreground backdrop-blur shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",
+          glassTooltipSurface,
+          "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-xl px-3 py-2 text-xs text-balance",
           className,
         )}
-        {...props}
       >
-        {children}
-        <TooltipPrimitive.Arrow className="bg-card/60 fill-[var(--card)] backdrop-blur z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-br from-white/15 via-white/[0.03] to-transparent" />
+        <span className="relative z-[1]">{children}</span>
+        <TooltipPrimitive.Arrow className="border-b border-r border-white/20 bg-background/50 dark:bg-black/40 z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] backdrop-blur-xl" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   )
@@ -101,12 +105,14 @@ function MobileTooltip({ children, content, className }: MobileTooltipProps) {
           <TooltipPrimitive.Content
             sideOffset={4}
             className={cn(
-              "bg-card/60 text-card-foreground backdrop-blur shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit max-w-[200px] origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",
+              glassTooltipSurface,
+              "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit max-w-[200px] origin-(--radix-tooltip-content-transform-origin) rounded-xl px-3 py-2 text-xs text-balance",
               className,
             )}
           >
-            {content}
-            <TooltipPrimitive.Arrow className="bg-card/60 fill-[var(--card)] backdrop-blur z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-br from-white/15 via-white/[0.03] to-transparent" />
+            <span className="relative z-[1]">{content}</span>
+            <TooltipPrimitive.Arrow className="border-b border-r border-white/20 bg-background/50 dark:bg-black/40 z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] backdrop-blur-xl" />
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>
