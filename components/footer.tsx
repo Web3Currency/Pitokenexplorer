@@ -1,5 +1,3 @@
-import { TestnetBadge } from "@/components/testnet-badge"
-
 function XIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -131,7 +129,6 @@ export function Footer() {
           <span>© 2026 W3C Digital Network · PiToken Explorer</span>
         </div>
 
-        <TestnetBadge className="absolute right-4 top-3 sm:right-6" />
       </div>
     </footer>
   )
