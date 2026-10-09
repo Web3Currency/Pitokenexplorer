@@ -161,7 +161,7 @@ export default function HomePage() {
         <Footer />
       </div>
 
-      ) : <DesktopAccessScreen />}
+      : <DesktopAccessScreen />}
 
       <script
         type="application/ld+json"
