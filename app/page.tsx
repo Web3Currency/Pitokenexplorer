@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ExploreSection } from "@/components/explore-section"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
@@ -109,10 +110,38 @@ function DesktopAccessScreen() {
   )
 }
 
+type DeviceMode = "checking" | "desktop" | "mobile"
+
+function useDeviceMode(): DeviceMode {
+  const [mode, setMode] = useState<DeviceMode>("checking")
+
+  useEffect(() => {
+    // Classify using the physical screen and primary input, not the resizable
+    // browser viewport. Shrinking a desktop window must not unlock the app.
+    const updateMode = () => {
+      const screenWidth = window.screen?.width ?? window.innerWidth
+      const hasDesktopPointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+      setMode(screenWidth >= 1200 && hasDesktopPointer ? "desktop" : "mobile")
+    }
+
+    updateMode()
+    window.addEventListener("resize", updateMode)
+    window.addEventListener("orientationchange", updateMode)
+    return () => {
+      window.removeEventListener("resize", updateMode)
+      window.removeEventListener("orientationchange", updateMode)
+    }
+  }, [])
+
+  return mode
+}
+
 export default function HomePage() {
+  const deviceMode = useDeviceMode()
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="md:hidden flex min-h-screen flex-col">
+      {deviceMode === "mobile" ? <div className="flex min-h-screen flex-col">
         <Header />
         <main className="flex-1 min-h-0 overflow-hidden">
           <section className="sr-only" aria-label="About Pi Token Explorer">
@@ -132,7 +161,7 @@ export default function HomePage() {
         <Footer />
       </div>
 
-      <DesktopAccessScreen />
+      ) : <DesktopAccessScreen />}
 
       <script
         type="application/ld+json"
