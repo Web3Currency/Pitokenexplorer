@@ -38,7 +38,7 @@ const structuredData = {
 
 function DesktopAccessScreen() {
   return (
-    <section className="hidden min-h-screen items-center justify-center overflow-hidden bg-[#0b0710] px-6 py-10 md:flex">
+    <section className="flex min-h-screen items-center justify-center overflow-hidden bg-[#0b0710] px-6 py-10">
       <style>{`
         @keyframes piExplorerOrangeGlow {
           0%, 100% { transform: translate3d(-50%, 0, 0) scale(1); opacity: 0.75; }
