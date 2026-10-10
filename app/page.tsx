@@ -116,21 +116,20 @@ function useDeviceMode(): DeviceMode {
   const [mode, setMode] = useState<DeviceMode>("checking")
 
   useEffect(() => {
-    // Classify using the physical screen and primary input, not the resizable
-    // browser viewport. Shrinking a desktop window must not unlock the app.
-    const updateMode = () => {
-      const screenWidth = window.screen?.width ?? window.innerWidth
-      const hasDesktopPointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches
-      setMode(screenWidth >= 1200 && hasDesktopPointer ? "desktop" : "mobile")
+    // Decide once from device identity and input capabilities. Do not use the
+    // resizable browser viewport, and do not reclassify on resize/orientation.
+    // This keeps a desktop on the QR landing page even when its window shrinks.
+    const navigatorWithUAData = navigator as Navigator & {
+      userAgentData?: { mobile?: boolean }
     }
+    const uaMobile = navigatorWithUAData.userAgentData?.mobile
+    const userAgent = navigator.userAgent
+    const mobileUserAgent =
+      /Android|iPhone|iPad|iPod|Mobile|Tablet|IEMobile|Opera Mini/i.test(userAgent)
+    const touchTablet = navigator.maxTouchPoints > 1 && window.screen.width < 1200
+    const isMobileDevice = uaMobile ?? (mobileUserAgent || touchTablet)
 
-    updateMode()
-    window.addEventListener("resize", updateMode)
-    window.addEventListener("orientationchange", updateMode)
-    return () => {
-      window.removeEventListener("resize", updateMode)
-      window.removeEventListener("orientationchange", updateMode)
-    }
+    setMode(isMobileDevice ? "mobile" : "desktop")
   }, [])
 
   return mode
@@ -138,6 +137,12 @@ function useDeviceMode(): DeviceMode {
 
 export default function HomePage() {
   const deviceMode = useDeviceMode()
+
+  // Never render the QR landing screen while device detection is unresolved.
+  // This prevents a mobile visitor seeing it briefly before the explorer mounts.
+  if (deviceMode === "checking") {
+    return <main className="min-h-screen bg-[#0b0710]" aria-busy="true" aria-label="Checking device compatibility" />
+  }
 
   return (
     <div className="min-h-screen bg-background">
